@@ -1,138 +1,182 @@
 <script lang="ts">
   import * as Table from "$lib/components/ui/table";
   import { Button } from "$lib/components/ui/button";
-  import * as Card from "$lib/components/ui/card";
-  import { onMount } from "svelte";
-  import { UUIDBlobToString } from "$lib/components/uuid_helper";
-
-  let products = $state([]);
-  let locations = $state([]);
-  let samples = $state([]);
-  let filter = $state("");
+  import ProductSelect from "$lib/components/selects/product-select.svelte";
+  import LocationSelect from "$lib/components/selects/location-select.svelte";
+  import { AppStore } from "$lib/components/app_store";
+  import * as Pagination from "$lib/components/ui/pagination";
   let selectedProduct = $state("");
   let selectedLocation = $state("");
+  let page = $state(1);
+  import { onMount, onDestroy } from "svelte";
+  let pageSize = $state(20); // Will be dynamically set based on available space
+  let tableContainer: HTMLDivElement;
+  const ROW_HEIGHT = 48; // px, adjust if your row height is different
+  const HEADER_HEIGHT = 56; // px, adjust if your table header is different
+  const PAGINATION_HEIGHT = 64; // px, adjust if your pagination controls are different
+  const FILTERS_HEIGHT = 64; // px, adjust if your filters area is different
+  const MARGIN = 32; // px, extra margin for safety
+
+  function calculatePageSize() {
+    if (!tableContainer) return;
+    const totalHeight = tableContainer.clientHeight;
+    const available =
+      totalHeight - HEADER_HEIGHT - PAGINATION_HEIGHT - FILTERS_HEIGHT - MARGIN;
+    const rows = Math.max(1, Math.floor(available / ROW_HEIGHT));
+    pageSize = rows;
+  }
+
+  let resizeObserver: ResizeObserver | null = null;
+
+  onMount(() => {
+    calculatePageSize();
+    if (tableContainer) {
+      resizeObserver = new ResizeObserver(() => {
+        calculatePageSize();
+      });
+      resizeObserver.observe(tableContainer);
+    }
+    window.addEventListener("resize", calculatePageSize);
+  });
+
+  onDestroy(() => {
+    if (resizeObserver && tableContainer) {
+      resizeObserver.unobserve(tableContainer);
+      resizeObserver.disconnect();
+    }
+    window.removeEventListener("resize", calculatePageSize);
+  });
+
+  // Helper to get all child ids for a given parent id
+  function getChildProductIds(parentId: string) {
+    return $AppStore.products
+      .filter((p) => p.parentProductID === parentId)
+      .map((p) => p.id);
+  }
+  function getChildLocationIds(parentId: string) {
+    return $AppStore.locations
+      .filter((l) => l.parentLocationID === parentId)
+      .map((l) => l.id);
+  }
+
   const filteredSamples = $derived(() => {
-    let result = samples;
+    let result = $AppStore.samples;
     if (selectedProduct) {
-      result = result.filter(
-        (sample: any) => sample["VariantID"] === selectedProduct
-      );
+      if (selectedProduct.startsWith("any-")) {
+        const parentId = selectedProduct.slice(4);
+        const childIds = getChildProductIds(parentId);
+        result = result.filter(
+          (sample) => sample.Product?.id && childIds.includes(sample.Product.id)
+        );
+      } else {
+        result = result.filter(
+          (sample) => sample.Product?.id === selectedProduct
+        );
+      }
     }
     if (selectedLocation) {
-      result = result.filter(
-        (sample: any) => sample["LocationID"] === selectedLocation
-      );
-    }
-    if (filter) {
-      const lower = filter.toLowerCase();
-      result = result.filter((sample: any) => {
-        const productName =
-          GetProductName(sample["VariantID"])?.toLowerCase() || "";
-        const locationName =
-          GetLocationName(sample["LocationID"])?.toLowerCase() || "";
-        return (
-          String(sample["ID"]).toLowerCase().includes(lower) ||
-          productName.includes(lower) ||
-          String(sample["CurrentModsSummary"]).toLowerCase().includes(lower) ||
-          locationName.includes(lower)
+      if (selectedLocation.startsWith("any-")) {
+        const parentId = selectedLocation.slice(4);
+        const childIds = getChildLocationIds(parentId);
+        // Include both parent and its children
+        const validIds = [parentId, ...childIds];
+        result = result.filter(
+          (sample) =>
+            sample.Location?.id && validIds.includes(sample.Location.id)
         );
-      });
+      } else {
+        result = result.filter(
+          (sample) => sample.Location?.id === selectedLocation
+        );
+      }
     }
     return result;
   });
 
-  async function GetSamples() {
-    products = (await (await fetch("/api/products")).json()) ?? [];
-    samples = (await (await fetch("/api/samples")).json()) ?? [];
-    locations = (await (await fetch("/api/locations")).json()) ?? [];
-  }
-
-  function GetProductName(variant_id: string) {
-    const found = products.find(
-      (variant) => variant["VariantID"] === variant_id
-    );
-    if (found) {
-      return `${found["CombinedName"]}`;
-    } else {
-      return "Unknown Product";
-    }
-  }
-
-  function GetLocationName(location_id: string) {
-    const found = locations.find((location) => location["ID"] === location_id);
-    if (found) {
-      return found["Name"];
-    } else {
-      return "Unknown Location";
-    }
-  }
+  const totalPages = $derived(() =>
+    Math.max(1, Math.ceil(filteredSamples().length / pageSize))
+  );
+  const paginatedSamples = $derived(() =>
+    filteredSamples().slice((page - 1) * pageSize, page * pageSize)
+  );
 
   function EditSample(sampleId: string) {
-    // Navigate to the sample edit page
-    window.location.href = `/app?sample=${sampleId}`;
+    window.location.href = `/app?sample_id=${sampleId}`;
   }
-
-  onMount(() => {
-    GetSamples();
-  });
-
-  $inspect(locations);
-  $inspect(samples);
-  $inspect(products);
 </script>
 
-<div class="mb-4 flex flex-wrap items-center gap-2">
-  <!-- Product Variant Dropdown -->
-  <select
-    class="select select-bordered max-w-xs"
-    bind:value={selectedProduct}
-    aria-label="Filter by product"
+<div class="flex flex-col h-full justify-stretch">
+  <div
+    class="mb-4 flex flex-wrap items-center gap-6 flex-row w-full"
+    style="min-height:64px"
   >
-    <option value="">All Products</option>
-    {#each products as variant}
-      <option value={variant["VariantID"]}>
-        {variant["CombinedName"]} - Issue {variant["VariantPcbIssue"]?.[
-          "String"
-        ]}
-      </option>
-    {/each}
-  </select>
-  <!-- Location Dropdown -->
-  <select
-    class="select select-bordered max-w-xs"
-    bind:value={selectedLocation}
-    aria-label="Filter by location"
-  >
-    <option value="">All Locations</option>
-    {#each locations as location}
-      <option value={location["ID"]}>{location["Name"]}</option>
-    {/each}
-  </select>
+    <div>
+      <ProductSelect bind:bindValue={selectedProduct} filterMode={true} />
+    </div>
+    <div>
+      <LocationSelect bind:bindValue={selectedLocation} filterMode={true} />
+    </div>
+  </div>
+  <div class="grow" bind:this={tableContainer}>
+    <Table.Root>
+      <Table.Header>
+        <Table.Row>
+          <Table.Head>ID</Table.Head>
+          <Table.Head>Product</Table.Head>
+          <Table.Head>Mods</Table.Head>
+          <Table.Head>Location</Table.Head>
+          <Table.Head>Status</Table.Head>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        {#each paginatedSamples() as sample}
+          <Table.Row>
+            <Table.Cell>{sample.DisplayId}</Table.Cell>
+            <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
+            <Table.Cell>{sample.ModSummary}</Table.Cell>
+            <Table.Cell>{sample.Location?.name}</Table.Cell>
+            <Table.Cell>{sample.Status}</Table.Cell>
+            <Table.Cell>
+              <Button onclick={() => EditSample(sample.DisplayId)}>Edit</Button>
+            </Table.Cell>
+          </Table.Row>
+        {/each}
+      </Table.Body>
+    </Table.Root>
+  </div>
+  <!-- Pagination Controls -->
+  <div class="flex justify-center mt-6">
+    <Pagination.Root
+      count={filteredSamples().length}
+      perPage={pageSize}
+      bind:page
+    >
+      {#snippet children({ pages, currentPage })}
+        <Pagination.Content>
+          <Pagination.Item>
+            <Pagination.PrevButton disabled={page === 1} />
+          </Pagination.Item>
+          {#each pages as pageObj (pageObj.key)}
+            {#if pageObj.type === "ellipsis"}
+              <Pagination.Item>
+                <Pagination.Ellipsis />
+              </Pagination.Item>
+            {:else}
+              <Pagination.Item>
+                <Pagination.Link
+                  page={pageObj}
+                  isActive={currentPage === pageObj.value}
+                >
+                  {pageObj.value}
+                </Pagination.Link>
+              </Pagination.Item>
+            {/if}
+          {/each}
+          <Pagination.Item>
+            <Pagination.NextButton disabled={page === totalPages()} />
+          </Pagination.Item>
+        </Pagination.Content>
+      {/snippet}
+    </Pagination.Root>
+  </div>
 </div>
-<Table.Root>
-  <Table.Header>
-    <Table.Row>
-      <Table.Head>ID</Table.Head>
-      <Table.Head>Product</Table.Head>
-      <Table.Head>Mods</Table.Head>
-      <Table.Head>Location</Table.Head>
-      <Table.Head>Status</Table.Head>
-    </Table.Row>
-  </Table.Header>
-  <Table.Body>
-    {#each filteredSamples() as sample}
-      <Table.Row>
-        <Table.Cell>{UUIDBlobToString(sample["ID"])}</Table.Cell>
-        <Table.Cell>{GetProductName(sample["VariantID"])}</Table.Cell>
-        <Table.Cell>{sample["CurrentModsSummary"]}</Table.Cell>
-        <Table.Cell>{GetLocationName(sample["LocationID"])}</Table.Cell>
-        <Table.Cell>{sample["State"]}</Table.Cell>
-        <Table.Cell
-          ><Button onclick={() => EditSample(UUIDBlobToString(sample["ID"]))}
-            >Edit</Button
-          ></Table.Cell
-        >
-      </Table.Row>
-    {/each}
-  </Table.Body>
-</Table.Root>

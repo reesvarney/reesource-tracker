@@ -7,11 +7,129 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
+const addSampleMod = `-- name: AddSampleMod :exec
+INSERT INTO
+    sample_mods (id, sample_id, name, time_added, time_removed)
+VALUES
+    (?, ?, ?, ?, NULL)
+`
+
+type AddSampleModParams struct {
+	ID        interface{}
+	SampleID  interface{}
+	Name      string
+	TimeAdded time.Time
+}
+
+func (q *Queries) AddSampleMod(ctx context.Context, arg AddSampleModParams) error {
+	_, err := q.db.ExecContext(ctx, addSampleMod,
+		arg.ID,
+		arg.SampleID,
+		arg.Name,
+		arg.TimeAdded,
+	)
+	return err
+}
+
+const deleteLocationByID = `-- name: DeleteLocationByID :exec
+DELETE FROM locations
+WHERE
+    id = ?
+`
+
+func (q *Queries) DeleteLocationByID(ctx context.Context, id interface{}) error {
+	_, err := q.db.ExecContext(ctx, deleteLocationByID, id)
+	return err
+}
+
+const deleteProductByID = `-- name: DeleteProductByID :exec
+DELETE FROM products
+WHERE
+    id = ?
+`
+
+func (q *Queries) DeleteProductByID(ctx context.Context, id interface{}) error {
+	_, err := q.db.ExecContext(ctx, deleteProductByID, id)
+	return err
+}
+
+const getLocation = `-- name: GetLocation :one
+SELECT
+    id,
+    name,
+    description,
+    parent_location_id
+FROM
+    locations
+WHERE
+    id = ?
+`
+
+func (q *Queries) GetLocation(ctx context.Context, id interface{}) (Location, error) {
+	row := q.db.QueryRowContext(ctx, getLocation, id)
+	var i Location
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.ParentLocationID,
+	)
+	return i, err
+}
+
+const getLocations = `-- name: GetLocations :many
+SELECT
+    id,
+    name,
+    description,
+    parent_location_id
+FROM
+    locations
+ORDER BY
+    name
+`
+
+func (q *Queries) GetLocations(ctx context.Context) ([]Location, error) {
+	rows, err := q.db.QueryContext(ctx, getLocations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Location
+	for rows.Next() {
+		var i Location
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.ParentLocationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProductByID = `-- name: GetProductByID :one
-SELECT id, name, parent_product_id FROM products WHERE id = ?
+SELECT
+    id,
+    name,
+    parent_product_id
+FROM
+    products
+WHERE
+    id = ?
 `
 
 func (q *Queries) GetProductByID(ctx context.Context, id interface{}) (Product, error) {
@@ -22,36 +140,24 @@ func (q *Queries) GetProductByID(ctx context.Context, id interface{}) (Product, 
 }
 
 const getProducts = `-- name: GetProducts :many
-WITH RECURSIVE item_tree(id, name, full_name) AS (
-    SELECT id, name, name as full_name FROM products
-    UNION ALL
-    SELECT p.id, p.name, item_tree.full_name || ' > ' || p.name
-    FROM products p
-    JOIN item_tree ON p.parent_product_id = item_tree.id
-)
 SELECT
-    item_tree.id AS item_id,
-    item_tree.name AS item_name,
-    item_tree.full_name AS combined_name
-FROM item_tree
+    id, name, parent_product_id
+FROM
+    products
+ORDER BY
+    name
 `
 
-type GetProductsRow struct {
-	ItemID       interface{}
-	ItemName     string
-	CombinedName string
-}
-
-func (q *Queries) GetProducts(ctx context.Context) ([]GetProductsRow, error) {
+func (q *Queries) GetProducts(ctx context.Context) ([]Product, error) {
 	rows, err := q.db.QueryContext(ctx, getProducts)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetProductsRow
+	var items []Product
 	for rows.Next() {
-		var i GetProductsRow
-		if err := rows.Scan(&i.ItemID, &i.ItemName, &i.CombinedName); err != nil {
+		var i Product
+		if err := rows.Scan(&i.ID, &i.Name, &i.ParentProductID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -66,7 +172,12 @@ func (q *Queries) GetProducts(ctx context.Context) ([]GetProductsRow, error) {
 }
 
 const getSampleById = `-- name: GetSampleById :one
-SELECT id, location_id, product_id, time_registered, last_update, state FROM samples WHERE id = ?
+SELECT
+    id, location_id, product_id, time_registered, last_update, state
+FROM
+    samples
+WHERE
+    id = ?
 `
 
 func (q *Queries) GetSampleById(ctx context.Context, id interface{}) (Sample, error) {
@@ -83,36 +194,15 @@ func (q *Queries) GetSampleById(ctx context.Context, id interface{}) (Sample, er
 	return i, err
 }
 
-const listLocations = `-- name: ListLocations :many
-SELECT id, name, parent_location_id FROM locations
-ORDER BY name
-`
-
-func (q *Queries) ListLocations(ctx context.Context) ([]Location, error) {
-	rows, err := q.db.QueryContext(ctx, listLocations)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Location
-	for rows.Next() {
-		var i Location
-		if err := rows.Scan(&i.ID, &i.Name, &i.ParentLocationID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listProducts = `-- name: ListProducts :many
-SELECT id, name, parent_product_id FROM products ORDER BY name
+SELECT
+    id,
+    name,
+    parent_product_id
+FROM
+    products
+ORDER BY
+    name
 `
 
 func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
@@ -139,9 +229,14 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 }
 
 const listSampleMods = `-- name: ListSampleMods :many
-SELECT id, sample_id, name, time_added, time_removed FROM sample_mods
-WHERE sample_mods.sample_id = ?
-ORDER BY time_added
+SELECT
+    id, sample_id, name, time_added, time_removed
+FROM
+    sample_mods
+WHERE
+    sample_mods.sample_id = ?
+ORDER BY
+    time_added
 `
 
 func (q *Queries) ListSampleMods(ctx context.Context, sampleID interface{}) ([]SampleMod, error) {
@@ -174,23 +269,32 @@ func (q *Queries) ListSampleMods(ctx context.Context, sampleID interface{}) ([]S
 }
 
 const listSamples = `-- name: ListSamples :many
-SELECT 
-    samples.id, samples.location_id, samples.product_id, samples.time_registered, samples.last_update, samples.state, 
-    COALESCE((
-        SELECT GROUP_CONCAT(sample_mods.name, ', ')
-        FROM sample_mods 
-        WHERE sample_mods.sample_id = samples.id AND sample_mods.time_removed IS NULL
-    ), '') AS current_mods_summary
-FROM samples
-ORDER BY time_registered
+SELECT
+    samples.id, samples.location_id, samples.product_id, samples.time_registered, samples.last_update, samples.state,
+    COALESCE(
+        (
+            SELECT
+                GROUP_CONCAT (sample_mods.name, ', ')
+            FROM
+                sample_mods
+            WHERE
+                sample_mods.sample_id = samples.id
+                AND sample_mods.time_removed IS NULL
+        ),
+        ''
+    ) AS current_mods_summary
+FROM
+    samples
+ORDER BY
+    time_registered
 `
 
 type ListSamplesRow struct {
 	ID                 interface{}
 	LocationID         interface{}
 	ProductID          interface{}
-	TimeRegistered     time.Time
-	LastUpdate         time.Time
+	TimeRegistered     sql.NullTime
+	LastUpdate         sql.NullTime
 	State              string
 	CurrentModsSummary interface{}
 }
@@ -226,23 +330,50 @@ func (q *Queries) ListSamples(ctx context.Context) ([]ListSamplesRow, error) {
 	return items, nil
 }
 
+const removeSampleMod = `-- name: RemoveSampleMod :exec
+UPDATE sample_mods
+SET
+    time_removed = ?
+WHERE
+    id = ?
+`
+
+type RemoveSampleModParams struct {
+	TimeRemoved sql.NullTime
+	ID          interface{}
+}
+
+func (q *Queries) RemoveSampleMod(ctx context.Context, arg RemoveSampleModParams) error {
+	_, err := q.db.ExecContext(ctx, removeSampleMod, arg.TimeRemoved, arg.ID)
+	return err
+}
+
 const updateOrCreateSample = `-- name: UpdateOrCreateSample :one
-INSERT INTO samples (id, location_id, product_id, time_registered, last_update, state)
-VALUES (?, ?, ?, ?, ?, ?)
-ON CONFLICT(id) DO UPDATE SET
+INSERT INTO
+    samples (
+        id,
+        location_id,
+        product_id,
+        time_registered,
+        last_update,
+        state
+    )
+VALUES
+    (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO
+UPDATE
+SET
     location_id = EXCLUDED.location_id,
     product_id = EXCLUDED.product_id,
     last_update = EXCLUDED.last_update,
-    state = EXCLUDED.state
-RETURNING id, location_id, product_id, time_registered, last_update, state
+    state = EXCLUDED.state RETURNING id, location_id, product_id, time_registered, last_update, state
 `
 
 type UpdateOrCreateSampleParams struct {
 	ID             interface{}
 	LocationID     interface{}
 	ProductID      interface{}
-	TimeRegistered time.Time
-	LastUpdate     time.Time
+	TimeRegistered sql.NullTime
+	LastUpdate     sql.NullTime
 	State          string
 }
 
@@ -267,10 +398,42 @@ func (q *Queries) UpdateOrCreateSample(ctx context.Context, arg UpdateOrCreateSa
 	return i, err
 }
 
+const upsertLocation = `-- name: UpsertLocation :exec
+INSERT INTO
+    locations (id, name, description, parent_location_id)
+VALUES
+    (?, ?, ?, ?) ON CONFLICT (id) DO
+UPDATE
+SET
+    name = EXCLUDED.name,
+    description = EXCLUDED.description,
+    parent_location_id = EXCLUDED.parent_location_id
+`
+
+type UpsertLocationParams struct {
+	ID               interface{}
+	Name             string
+	Description      sql.NullString
+	ParentLocationID interface{}
+}
+
+func (q *Queries) UpsertLocation(ctx context.Context, arg UpsertLocationParams) error {
+	_, err := q.db.ExecContext(ctx, upsertLocation,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.ParentLocationID,
+	)
+	return err
+}
+
 const upsertProduct = `-- name: UpsertProduct :exec
-INSERT INTO products (id, name, parent_product_id)
-VALUES (?, ?, ?)
-ON CONFLICT(id) DO UPDATE SET
+INSERT INTO
+    products (id, name, parent_product_id)
+VALUES
+    (?, ?, ?) ON CONFLICT (id) DO
+UPDATE
+SET
     name = EXCLUDED.name,
     parent_product_id = EXCLUDED.parent_product_id
 `

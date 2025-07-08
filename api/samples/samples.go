@@ -1,7 +1,12 @@
 package samples
 
 import (
+	"apollo-sample-tracker/api/samples/mods"
+	"apollo-sample-tracker/api/sync"
 	"apollo-sample-tracker/lib/database"
+	id_helper "apollo-sample-tracker/lib/id_helper"
+	sampleid "apollo-sample-tracker/lib/sample_id"
+	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,6 +24,8 @@ func Routes(route *gin.RouterGroup) {
 	route.GET("/samples", getSamples)
 	route.GET("/sample/:sample_id", getSample)
 	route.POST("/sample/:sample_id", updateSample)
+	route.GET("/generate_samples", generateUniqueSamples)
+	mods.Routes(route.Group("/sample/:sample_id/mods"))
 }
 
 func getSample(c *gin.Context) {
@@ -49,11 +56,13 @@ func getSample(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	mod_data, err := database.Connection.ListSampleMods(c, RawSampleID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"sample": res, "mods": mod_data})
 }
 
@@ -66,7 +75,7 @@ func updateSample(c *gin.Context) {
 		return
 	}
 	// Expecting sampleID in the format "xx-xx-xx" (6 base36 chars, 3 pairs)
-	parts := strings.Split(sampleID, "-")
+	parts := strings.Split(strings.ToUpper(sampleID), "-")
 	if len(parts) != 3 || len(parts[0]) != 2 || len(parts[1]) != 2 || len(parts[2]) != 2 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sample ID format"})
 		return
@@ -82,19 +91,37 @@ func updateSample(c *gin.Context) {
 		rawID[i] = byte(val)
 	}
 	RawSampleID := rawID[:]
+
+	// Marshal location_id and product_id to binary ([]byte)
+	locationID := c.PostForm("location_id")
+	locationBinary, locErrMsg, locOK := id_helper.MustParseAndMarshalUUID(locationID)
+	if !locOK {
+		c.JSON(http.StatusBadRequest, gin.H{"error": locErrMsg})
+		return
+	}
+
+	productID := c.PostForm("product_id")
+	productBinary, prodErrMsg, prodOK := id_helper.MustParseAndMarshalUUID(productID)
+	if !prodOK {
+		c.JSON(http.StatusBadRequest, gin.H{"error": prodErrMsg})
+		return
+	}
+
 	current_time := time.Now()
+
 	res, err := database.Connection.UpdateOrCreateSample(c, database.UpdateOrCreateSampleParams{
 		ID:             RawSampleID,
-		LocationID:     c.PostForm("location_id"),
-		ProductID:      c.PostForm("product_id"),
-		TimeRegistered: current_time,
-		LastUpdate:     current_time,
+		LocationID:     locationBinary,
+		ProductID:      productBinary,
+		TimeRegistered: sql.NullTime{Time: current_time},
+		LastUpdate:     sql.NullTime{Time: current_time},
 		State:          c.PostForm("state"),
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	sync.BroadcastEvent("samples_updated", gin.H{})
 	c.JSON(http.StatusOK, res)
 }
 
@@ -115,4 +142,32 @@ func getSamples(c *gin.Context) {
 		samples = append(samples, SampleData{sample, mod_data})
 	}
 	c.JSON(http.StatusOK, samples)
+}
+
+func generateUniqueSamples(c *gin.Context) {
+	numSamplesStr := c.Query("num_samples")
+	numSamples, err := strconv.Atoi(numSamplesStr)
+	if err != nil || numSamples <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid number of samples"})
+		return
+	}
+	sample_ids := make([]string, numSamples)
+	for i := 0; i < numSamples; i++ {
+		new_id_string, new_id, err := sampleid.GenerateNewSampleID()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		_, err = database.Connection.UpdateOrCreateSample(c, database.UpdateOrCreateSampleParams{
+			ID:    new_id[:],
+			State: "unassigned",
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		sample_ids[i] = new_id_string
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Samples generated successfully", "sample_ids": sample_ids})
+	sync.BroadcastEvent("samples_updated", gin.H{})
 }

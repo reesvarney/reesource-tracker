@@ -4,6 +4,7 @@ import (
 	"apollo-sample-tracker/api/locations"
 	"apollo-sample-tracker/api/products"
 	"apollo-sample-tracker/api/samples"
+	"apollo-sample-tracker/api/sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,4 +14,5 @@ func Routes(route *gin.Engine) {
 	samples.Routes(api_routes)
 	products.Routes(api_routes)
 	locations.Routes(api_routes)
+	sync.Routes(api_routes)
 }

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button";
-  import * as Select from "$lib/components/ui/select";
+  import ProductSelect from "$lib/components/selects/product-select.svelte";
   import { Input } from "$lib/components/ui/input";
-
+  import { SampleProduct } from "$lib/components/product";
+  import { AppStore } from "$lib/components/app_store";
   import {
     Table,
     TableHeader,
@@ -13,202 +13,119 @@
     TableCell,
   } from "$lib/components/ui/table";
 
-  type Product = {
-    ID: string;
-    Name: string;
-    ParentProductID: string | null;
-  };
+  let updateTimeouts = new Map();
+  // Store for parent product IDs, since it needs a string value for Select
+  let parent_product_id: { [key: string]: string } = $state({});
 
-  let products: Array<Product & { CombinedName: string }> = [];
-  let editingProduct: Product | null = null;
-  let name = "";
-  let parentProductId: string = "";
-  let isEditing = false;
-  let error = "";
+  AppStore.subscribe((data) => {
+    data.products.forEach((product) => {
+      if (product.parentProductID) {
+        parent_product_id[product.id] = product.parentProductID;
+      } else {
+        parent_product_id[product.id] = "";
+      }
+    });
+  });
 
-  async function fetchProducts() {
-    products = (await (await fetch("/api/products")).json()) ?? [];
-  }
-  // Inline save for table editing
-  async function saveProductInline(
-    product: Product & { CombinedName: string },
-    newName: string,
-    newParentProductId: string
-  ) {
+  async function updateProduct(product: SampleProduct) {
     let payload = {
-      name: newName,
-      parent_product_id: newParentProductId || null,
+      name: product.name,
+      parent_product_id: parent_product_id[product.id] || null,
     };
-    let resp = await fetch(`/api/product/${product.ID}`, {
+    await fetch(`/api/product/${product.id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!resp.ok) {
-      // Optionally show error UI
-      error = (await resp.json()).error || "Failed to save product.";
-      await fetchProducts();
-      return;
+  }
+
+  // Debounced update function
+  function debounceUpdate(product: SampleProduct) {
+    if (updateTimeouts.has(product.id)) {
+      clearTimeout(updateTimeouts.get(product.id));
     }
-    await fetchProducts();
+    const timeout = setTimeout(() => {
+      updateProduct(product);
+      updateTimeouts.delete(product.id);
+    }, 1000);
+    updateTimeouts.set(product.id, timeout);
   }
 
-  function startEdit(product: Product) {
-    editingProduct = product;
-    name = product.Name;
-    parentProductId = product.ParentProductID || "";
-    isEditing = true;
-    error = "";
-  }
-
-  function startCreate() {
-    editingProduct = null;
-    name = "";
-    parentProductId = "";
-    isEditing = true;
-    error = "";
-  }
-
-  async function saveProduct() {
-    if (!name) {
-      error = "Product name is required.";
-      return;
-    }
-    let id = editingProduct ? editingProduct.ID : "";
-    let payload = {
-      name,
-      parent_product_id: parentProductId || null,
-    };
-    let resp = await fetch(`/api/product/${id}`, {
+  // Add a new product row by creating it on the backend
+  async function addProductRow() {
+    await fetch("/api/product", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ name: "", parent_product_id: null }),
     });
-    if (!resp.ok) {
-      error = (await resp.json()).error || "Failed to save product.";
-      return;
-    }
-    isEditing = false;
-    await fetchProducts();
-    console.log(products);
   }
 
-  onMount(fetchProducts);
+  async function deleteProduct(product: SampleProduct) {
+    await fetch(`/api/product/${product.id}`, { method: "DELETE" });
+  }
 </script>
 
-{#if isEditing}
-  <form
-    on:submit|preventDefault={saveProduct}
-    class="flex flex-col gap-4 max-w-md"
-  >
-    <div>
-      <label for="product-name" class="block mb-1 font-semibold"
-        >Product Name</label
-      >
-      <Input
-        id="product-name"
-        class="input input-bordered w-full"
-        bind:value={name}
-        required
-      />
-    </div>
-    <div>
-      <label for="parent-product" class="block mb-1 font-semibold"
-        >Parent Product</label
-      >
-      <Select.Root bind:value={parentProductId} class="w-full">
-        <Select.Trigger id="parent-product" class="input input-bordered w-full">
-          {#if parentProductId}
-            {#if products.find((p) => p.ID === parentProductId)}
-              {products.find((p) => p.ID === parentProductId).CombinedName}
-            {:else}
-              None
-            {/if}
-          {:else}
-            None
-          {/if}
-        </Select.Trigger>
-        <Select.Content class="w-full">
-          <Select.Item value="">None</Select.Item>
-          {#each products.filter((p) => !editingProduct || p.ID !== editingProduct.ID) as product}
-            <Select.Item value={product.ID}>{product.CombinedName}</Select.Item>
-          {/each}
-        </Select.Content>
-      </Select.Root>
-    </div>
-    {#if error}
-      <div class="text-red-600">{error}</div>
-    {/if}
-    <div class="flex gap-2">
-      <Button type="submit">Save</Button>
-      <Button type="button" onclick={() => (isEditing = false)}>Cancel</Button>
-    </div>
-  </form>
-{:else}
-  <div class="mb-4">
-    <Button type="button" onclick={startCreate}>Add Product</Button>
-  </div>
-  <Table class="w-full">
-    <TableHeader>
+<Table class="w-full">
+  <TableHeader>
+    <TableRow>
+      <TableHead>Name</TableHead>
+      <TableHead>Parent Product</TableHead>
+      <TableHead>Delete</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {#each $AppStore.products as product, i (product.id || i)}
       <TableRow>
-        <TableHead>Name</TableHead>
-        <TableHead>Parent Product</TableHead>
+        <TableCell>
+          <Input
+            class="input input-bordered w-full"
+            bind:value={product.name}
+            oninput={(e: Event) => {
+              const target = e.target as HTMLInputElement;
+              product.name = target.value;
+              debounceUpdate(product);
+            }}
+            placeholder="Product Name"
+          />
+        </TableCell>
+        <TableCell>
+          <ProductSelect
+            bind:bindValue={parent_product_id[product.id]}
+            onValueChange={(v) => {
+              parent_product_id[product.id] = v;
+              parent_product_id = parent_product_id;
+              debounceUpdate(product);
+            }}
+            placeholder="None"
+            id={`parent-product-${product.id}`}
+            disabled={false}
+            required={false}
+            filterOutIds={[
+              product.id,
+              ...product.ChildProducts.map((child) => child.id),
+            ]}
+            options={$AppStore.products
+              .filter(
+                (p) =>
+                  p.id !== product.id &&
+                  !product.ChildProducts.some((child) => child.id === p.id)
+              )
+              .map((p) => ({ value: p.id, label: p.name }))}
+          />
+        </TableCell>
+        <TableCell>
+          <Button
+            type="button"
+            variant="destructive"
+            onclick={() => deleteProduct(product)}
+          >
+            Delete
+          </Button>
+        </TableCell>
       </TableRow>
-    </TableHeader>
-    <TableBody>
-      {#each products as product, i (product.ID)}
-        <TableRow>
-          <TableCell>
-            <Input
-              class="input input-bordered w-full"
-              value={product.ItemName}
-              onchange={async (e) => {
-                const newName = e.target.value;
-                if (newName !== product.Name) {
-                  await saveProductInline(
-                    product,
-                    newName,
-                    product.ParentProductID || ""
-                  );
-                }
-              }}
-            />
-          </TableCell>
-          <TableCell>
-            <Select.Root
-              bind:value={product.ParentProductID}
-              class="w-full"
-              onchange={async (e) => {
-                const newParent = e.detail;
-                if (newParent !== product.ParentProductID) {
-                  await saveProductInline(product, product.Name, newParent);
-                }
-              }}
-            >
-              <Select.Trigger class="input input-bordered w-full">
-                {#if product.ParentProductID}
-                  {#if products.find((p) => p.ID === product.ParentProductID)}
-                    {products.find((p) => p.ID === product.ParentProductID)
-                      .CombinedName}
-                  {:else}
-                    None
-                  {/if}
-                {:else}
-                  None
-                {/if}
-              </Select.Trigger>
-              <Select.Content class="w-full">
-                <Select.Item value="">None</Select.Item>
-                {#each products.filter((p) => p.ID !== product.ID) as parent}
-                  <Select.Item value={parent.ID}
-                    >{parent.CombinedName}</Select.Item
-                  >
-                {/each}
-              </Select.Content>
-            </Select.Root>
-          </TableCell>
-        </TableRow>
-      {/each}
-    </TableBody>
-  </Table>
-{/if}
+    {/each}
+  </TableBody>
+</Table>
+<div class="mt-4 w-full flex flex-row justify-end">
+  <Button type="button" onclick={addProductRow}>Add Product</Button>
+</div>

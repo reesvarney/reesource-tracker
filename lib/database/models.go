@@ -12,6 +12,7 @@ import (
 type Location struct {
 	ID               interface{}
 	Name             string
+	Description      sql.NullString
 	ParentLocationID interface{}
 }
 
@@ -25,8 +26,8 @@ type Sample struct {
 	ID             interface{}
 	LocationID     interface{}
 	ProductID      interface{}
-	TimeRegistered time.Time
-	LastUpdate     time.Time
+	TimeRegistered sql.NullTime
+	LastUpdate     sql.NullTime
 	State          string
 }
 
