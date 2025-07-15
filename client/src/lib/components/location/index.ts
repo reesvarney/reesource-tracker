@@ -43,4 +43,11 @@ export class SampleLocation {
       (l) => l.parentLocationID === this.id
     );
   }
+
+  get CombinedName(): string {
+    if (this.ParentLocation) {
+      return `${this.ParentLocation.CombinedName} - ${this.name}`;
+    }
+    return this.name;
+  }
 }

@@ -1,6 +1,8 @@
 <script lang="ts">
+  import ProductTree from "./ProductTree.svelte";
   import * as Select from "../ui/select";
   import { AppStore } from "$lib/components/app_store";
+  import type { SampleProduct } from "$lib/components/product";
   export let bindValue: string;
   export let disabled: boolean = false;
   export let placeholder: string = "Select a product";
@@ -10,6 +12,20 @@
   export let onValueChange: (value: string) => void = () => {};
   export let filterMode: boolean = false;
   export let filterOutIds: string[] = [];
+
+  let top_level_products: SampleProduct[] = [];
+
+  AppStore.subscribe((new_val) => {
+    top_level_products =
+      new_val.products.filter(
+        (p: SampleProduct) =>
+          p.parentProductID === "" || p.parentProductID === null
+      ) ?? [];
+  });
+
+  function findProductById(id: string): SampleProduct | null {
+    return $AppStore.products.find((product) => product.id === id) || null;
+  }
 </script>
 
 <Select.Root
@@ -26,11 +42,11 @@
       {:else if bindValue.startsWith("any-")}
         {(() => {
           const parentId = bindValue.slice(4);
-          const parent = $AppStore.products.find((p) => p.id === parentId);
-          return `Any variant of ${parent ? parent.name : ""}`;
+          const parent = findProductById(parentId);
+          return `Any variant of ${parent ? parent.CombinedName : ""}`;
         })()}
       {:else}
-        {$AppStore.products.find((p) => p.id === bindValue)?.name}
+        {findProductById(bindValue)?.CombinedName}
       {/if}
     {:else}
       {placeholder}
@@ -42,22 +58,13 @@
       {#each options.filter((option) => !filterOutIds.includes(option.value)) as option}
         <Select.Item value={option.value}>{option.label}</Select.Item>
       {/each}
-    {:else if filterMode}
-      {#each $AppStore.products.filter((p) => !p.parentProductID && !filterOutIds.includes(p.id)) as parent}
-        <Select.Label>{parent.name}</Select.Label>
-        {#if !filterOutIds.includes("any-" + parent.id)}
-          <Select.Item value={"any-" + parent.id}
-            >Any variant of {parent.name}</Select.Item
-          >
-        {/if}
-        {#each $AppStore.products.filter((p) => p.parentProductID === parent.id && !filterOutIds.includes(p.id)) as child}
-          <Select.Item value={child.id}>{child.name}</Select.Item>
-        {/each}
-      {/each}
     {:else}
-      {#each $AppStore.products.filter((p) => p.parentProductID && !filterOutIds.includes(p.id)) as child}
-        <Select.Item value={child.id}>{child.name}</Select.Item>
-      {/each}
+      <ProductTree
+        products={top_level_products}
+        {filterOutIds}
+        level={0}
+        {filterMode}
+      />
     {/if}
   </Select.Content>
 </Select.Root>

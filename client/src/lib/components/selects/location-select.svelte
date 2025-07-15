@@ -1,6 +1,8 @@
 <script lang="ts">
+  import LocationTree from "./LocationTree.svelte";
   import * as Select from "../ui/select";
   import { AppStore } from "$lib/components/app_store";
+  import type { SampleLocation } from "$lib/components/location";
   export let bindValue: string;
   export let disabled: boolean = false;
   export let placeholder: string = "Select a location";
@@ -10,6 +12,16 @@
   export let onValueChange: (value: string) => void = () => {};
   export let filterMode: boolean = false;
   export let filterOutIds: string[] = [];
+
+  let top_level_locations: SampleLocation[] = [];
+
+  AppStore.subscribe((new_val) => {
+    top_level_locations =
+      new_val.locations.filter(
+        (l: SampleLocation) =>
+          l.parentLocationID === "" || l.parentLocationID === null
+      ) ?? [];
+  });
 </script>
 
 <Select.Root
@@ -42,22 +54,13 @@
       {#each options.filter((option) => !filterOutIds.includes(option.value)) as option}
         <Select.Item value={option.value}>{option.label}</Select.Item>
       {/each}
-    {:else if filterMode}
-      {#each $AppStore.locations.filter((l) => !l.parentLocationID && !filterOutIds.includes(l.id)) as parent}
-        <Select.Label>{parent.name}</Select.Label>
-        {#if !filterOutIds.includes("any-" + parent.id)}
-          <Select.Item value={"any-" + parent.id}
-            >Anywhere in {parent.name}</Select.Item
-          >
-        {/if}
-        {#each $AppStore.locations.filter((l) => l.parentLocationID === parent.id && !filterOutIds.includes(l.id)) as child}
-          <Select.Item value={child.id}>{child.name}</Select.Item>
-        {/each}
-      {/each}
     {:else}
-      {#each $AppStore.locations.filter((l) => l.parentLocationID && !filterOutIds.includes(l.id)) as child}
-        <Select.Item value={child.id}>{child.name}</Select.Item>
-      {/each}
+      <LocationTree
+        locations={top_level_locations}
+        {filterOutIds}
+        level={0}
+        {filterMode}
+      />
     {/if}
   </Select.Content>
 </Select.Root>

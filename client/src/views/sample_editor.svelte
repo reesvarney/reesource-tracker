@@ -8,8 +8,9 @@
   import { IDStringToBlob } from "$lib/components/id_helper";
   import { AppStore } from "$lib/components/app_store";
   import { Sample } from "$lib/components/sample";
-  import { SampleMod } from "$lib/components/sample_mod";
   import * as Table from "$lib/components/ui/table";
+  import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+
   let sample: Sample = $state(new Sample({}));
   let showFittedOnly = $state(false);
   let sample_id = "";
@@ -98,16 +99,10 @@
   onMount(fetchSample);
 </script>
 
-<Card.Header>
-  <Card.Title>Edit Sample</Card.Title>
-</Card.Header>
 <Card.Content>
+  <h2>Edit Sample: {sample.DisplayId}</h2>
   {#if sample}
     <form onsubmit={saveSample} class="space-y-4">
-      <div>
-        <label class="block font-bold" for="sample-id">Sample ID</label>
-        <div id="sample-id">{sample.DisplayId}</div>
-      </div>
       <div>
         <ProductSelect
           bind:bindValue={product_id}
@@ -128,10 +123,10 @@
     <div class="mt-6">
       <h3 class="font-bold mb-2">Mods</h3>
       <div class="flex flex-wrap gap-2 mb-2 items-center">
-        <label class="flex items-center gap-1 ml-4">
-          <input type="checkbox" bind:checked={showFittedOnly} />
-          <span class="text-sm">Show fitted only</span>
-        </label>
+        <Checkbox bind:checked={showFittedOnly} id="show-fitted-mods" />
+        <label class="text-sm" for="show-fitted-mods"
+          >Show only fitted mods</label
+        >
       </div>
       {#if add_mod_error}
         <div class="text-red-500 text-sm mb-2">{add_mod_error}</div>

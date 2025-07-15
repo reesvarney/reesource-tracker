@@ -50,9 +50,9 @@ export async function UpdateProducts() {
   }
   AppStore.update((data) => ({
     ...data,
-    products: new_products.map(
-      (product: any) => new SampleProduct(product, AppStore)
-    ),
+    products: new_products
+      .map((product: any) => new SampleProduct(product, AppStore))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
   }));
 }
 
