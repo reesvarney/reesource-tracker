@@ -1,10 +1,10 @@
 package mods
 
 import (
-	"apollo-sample-tracker/api/sync"
-	"apollo-sample-tracker/lib/database"
-	"apollo-sample-tracker/lib/id_helper"
-	sampleid "apollo-sample-tracker/lib/sample_id"
+	"reesource-tracker/api/sync"
+	"reesource-tracker/lib/database"
+	"reesource-tracker/lib/id_helper"
+	sampleid "reesource-tracker/lib/sample_id"
 	"database/sql"
 	"net/http"
 	"time"

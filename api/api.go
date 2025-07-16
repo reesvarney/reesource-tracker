@@ -1,10 +1,10 @@
 package api
 
 import (
-	"apollo-sample-tracker/api/locations"
-	"apollo-sample-tracker/api/products"
-	"apollo-sample-tracker/api/samples"
-	"apollo-sample-tracker/api/sync"
+	"reesource-tracker/api/locations"
+	"reesource-tracker/api/products"
+	"reesource-tracker/api/samples"
+	"reesource-tracker/api/sync"
 
 	"github.com/gin-gonic/gin"
 )

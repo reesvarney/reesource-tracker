@@ -1,9 +1,9 @@
 package locations
 
 import (
-	"apollo-sample-tracker/api/sync"
-	"apollo-sample-tracker/lib/database"
-	id_helper "apollo-sample-tracker/lib/id_helper"
+	"reesource-tracker/api/sync"
+	"reesource-tracker/lib/database"
+	id_helper "reesource-tracker/lib/id_helper"
 	"database/sql"
 	"net/http"
 

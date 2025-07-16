@@ -1,7 +1,7 @@
 package database
 
 import (
-	sqlite_driver "apollo-sample-tracker/lib/database/drivers/sqlite"
+	sqlite_driver "reesource-tracker/lib/database/drivers/sqlite"
 	"context"
 )
 

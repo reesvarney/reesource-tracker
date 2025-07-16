@@ -1,11 +1,11 @@
 package samples
 
 import (
-	"apollo-sample-tracker/api/samples/mods"
-	"apollo-sample-tracker/api/sync"
-	"apollo-sample-tracker/lib/database"
-	id_helper "apollo-sample-tracker/lib/id_helper"
-	sampleid "apollo-sample-tracker/lib/sample_id"
+	"reesource-tracker/api/samples/mods"
+	"reesource-tracker/api/sync"
+	"reesource-tracker/lib/database"
+	id_helper "reesource-tracker/lib/id_helper"
+	sampleid "reesource-tracker/lib/sample_id"
 	"database/sql"
 	"net/http"
 	"strconv"

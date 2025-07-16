@@ -11,5 +11,8 @@ export default defineConfig({
       $views: path.resolve("./src/views"),
     },
   },
+  build: {
+    outDir: "../build/client",
+  },
   base: "/app",
 });

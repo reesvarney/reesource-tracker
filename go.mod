@@ -1,4 +1,4 @@
-module apollo-sample-tracker
+module reesource-tracker
 
 go 1.24.4
 

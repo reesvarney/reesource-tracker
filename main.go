@@ -1,13 +1,13 @@
 package main
 
 import (
-	"apollo-sample-tracker/api"
-	"apollo-sample-tracker/lib/database"
 	"context"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"reesource-tracker/api"
+	"reesource-tracker/lib/database"
 	"runtime"
 	"strings"
 
@@ -21,9 +21,15 @@ import (
 var db_schema string
 
 func main() {
-	r := gin.Default()
 	godotenv.Load()
 	_, devmode := os.LookupEnv("DEV")
+	var r *gin.Engine
+	if devmode {
+		r = gin.Default() // includes Logger and Recovery
+	} else {
+		r = gin.New() // no Logger
+		r.Use(gin.Recovery())
+	}
 	if devmode {
 		println("Running frontend proxy")
 		r.Any("/app/*proxypath", proxy)
@@ -40,6 +46,7 @@ func main() {
 			}
 			c.HTML(http.StatusOK, "index.html", gin.H{})
 		})
+
 	}
 	database.Connect(context.Background(), db_schema)
 	api.Routes(r)
