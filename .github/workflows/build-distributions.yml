@@ -67,7 +67,7 @@ jobs:
           go-version: "1.22"
       - name: Build Windows binary
         run: |
-          mkdir build
+          mkdir build 2>$null || echo "build directory already exists"
           $env:GOOS='windows'
           $env:GOARCH='amd64'
           go build -o build/reesource-tracker.exe ./main.go
