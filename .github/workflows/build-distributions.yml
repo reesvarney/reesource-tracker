@@ -43,12 +43,12 @@ jobs:
       - name: Build Linux binary
         run: |
           mkdir -p build
-          GOOS=linux GOARCH=amd64 go build -o build/reesource-tracker-linux ./main.go
+          GOOS=linux GOARCH=amd64 go build -o build/reesource-tracker ./main.go
       - name: Upload Linux binary
         uses: actions/upload-artifact@v4
         with:
           name: reesource-tracker-linux
-          path: build/reesource-tracker-linux
+          path: build/**
 
   build-windows:
     needs: build-client
@@ -67,7 +67,7 @@ jobs:
           go-version: "1.22"
       - name: Build Windows binary
         run: |
-          if (not exist "build"){ mkdir "build"}
+          mkdir -p "build"
           $env:GOOS='windows'
           $env:GOARCH='amd64'
           go build -o build/reesource-tracker.exe ./main.go
@@ -75,7 +75,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: reesource-tracker-windows
-          path: build/reesource-tracker.exe
+          path: build/**
 
   build-docker:
     runs-on: ubuntu-latest
