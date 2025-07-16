@@ -23,7 +23,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: client-build
-          path: ../build/client/**
+          path: build/client/**
 
   build-linux:
     needs: build-client
@@ -35,7 +35,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: client-build
-          path: client/build
+          path: build/client
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -60,7 +60,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: client-build
-          path: client/build
+          path: build/client
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
