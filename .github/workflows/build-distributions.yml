@@ -1,0 +1,87 @@
+name: Build and Distribute Sample Tracker
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Build Linux binary
+        run: |
+          mkdir -p build
+          GOOS=linux GOARCH=amd64 go build -o build/reesource-tracker-linux ./main.go
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: reesource-tracker-linux
+          path: build/reesource-tracker-linux
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Build Windows binary
+        run: |
+          mkdir build
+          $env:GOOS='windows'
+          $env:GOARCH='amd64'
+          go build -o build/reesource-tracker.exe ./main.go
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: reesource-tracker-windows
+          path: build/reesource-tracker.exe
+
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: sample-tracker:latest
+      - name: Save Docker image as tar
+        run: docker save sample-tracker:latest -o build/sample-tracker-docker.tar
+      - name: Upload Docker image tar
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-tracker-docker
+          path: build/sample-tracker-docker.tar
+
+  collect-artifacts:
+    needs: [build-linux, build-windows, build-docker]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Archive all distributions
+        run: |
+          tar -czvf sample-tracker-distributions.tar.gz dist
+      - name: Upload final archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-tracker-distributions
+          path: sample-tracker-distributions.tar.gz
