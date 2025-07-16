@@ -1,6 +1,6 @@
-# Apollo Sample Tracker
+# Reesource Tracker
 
-Apollo Sample Tracker is a full-stack application for tracking samples, products, and locations. It uses Go for the backend, Bun (with Svelte) for the frontend, and SQLC for type-safe database access.
+Reesource Tracker is a full-stack application for tracking samples, products, and locations. It uses Go for the backend, Bun (with Svelte) for the frontend, and SQLC for type-safe database access.
 
 ## Development Guide
 
