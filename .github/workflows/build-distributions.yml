@@ -91,6 +91,7 @@ jobs:
           file: Dockerfile
           push: false
           tags: sample-tracker:latest
+          outputs: type=docker
       - name: Create build directory
         run: mkdir -p build
       - name: Save Docker image as tar
