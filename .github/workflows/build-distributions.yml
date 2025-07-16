@@ -7,11 +7,35 @@ on:
     branches: [main]
 
 jobs:
-  build-linux:
+  build-client:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+      - name: Build Frontend
+        run: |
+          cd client
+          bun install
+          bun run build --emptyOutDir
+      - name: Upload Frontend Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-build
+          path: client/build
+
+  build-linux:
+    needs: build-client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download Frontend Build
+        uses: actions/download-artifact@v4
+        with:
+          name: client-build
+          path: client/build
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -27,10 +51,16 @@ jobs:
           path: build/reesource-tracker-linux
 
   build-windows:
+    needs: build-client
     runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Download Frontend Build
+        uses: actions/download-artifact@v4
+        with:
+          name: client-build
+          path: client/build
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -61,6 +91,8 @@ jobs:
           file: Dockerfile
           push: false
           tags: sample-tracker:latest
+      - name: Create build directory
+        run: mkdir -p build
       - name: Save Docker image as tar
         run: docker save sample-tracker:latest -o build/sample-tracker-docker.tar
       - name: Upload Docker image tar
