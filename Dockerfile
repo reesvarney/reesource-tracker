@@ -24,5 +24,6 @@ RUN apt-get update && apt-get install ca-certificates -y
 RUN update-ca-certificates
 COPY --from=go_builder /build/build .
 COPY --from=bun_builder /build/build .
+RUN mkdir /app/database
 EXPOSE 80
 ENTRYPOINT ["/app/reesource-tracker"]
