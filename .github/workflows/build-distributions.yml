@@ -107,4 +107,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sample-tracker-docker
-          path: build/sample-tracker-docker.tar
+          path: build/reesource-tracker-docker.tar
