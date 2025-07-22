@@ -21,9 +21,18 @@
   let qrSize = $state(11); // mm (QR code SVG size)
 
   // Derived sizes
-  // Sheet size in mm (A4 printable area, e.g. 200mm x 120mm)
-  let sheetWidth = 198; // mm (A4 minus margins)
-  let sheetHeight = 111.5; // mm
+  // Use window size in mm if print view is open, otherwise default to A4 size
+  function pxToMm(px: number) {
+    // 1in = 25.4mm, window.devicePixelRatio for scaling
+    return ((px / (window.devicePixelRatio || 1)) * 25.4) / 96;
+  }
+
+  // Print layout state
+  let printSheetWidth = 198;
+  let printSheetHeight = 111.5;
+  let printGridCols = 13;
+  let printGridRows = 7;
+  let printPerSheet = printGridCols * printGridRows;
 
   // The grid slot size is determined by qrSize only; height for text is handled in CSS
   let gridSlotSize = $derived(qrSize); // mm
@@ -31,14 +40,62 @@
   let qrSvgPx = $derived(`${qrSize}mm`);
   let qrPadPx = $derived(`${qrPadding}mm`); // for gap only
 
-  // Dynamically calculate columns and rows based on user sizing (runes mode)
+  // Dynamically calculate columns and rows based on user sizing (preview mode)
+  let sheetWidth = $derived(showPrintOverlay ? printSheetWidth : 198);
+  let sheetHeight = $derived(showPrintOverlay ? printSheetHeight : 111.5);
   let gridCols = $derived(
-    Math.max(1, Math.floor((sheetWidth + qrPadding) / (qrSize + qrPadding)))
+    showPrintOverlay
+      ? printGridCols
+      : Math.max(1, Math.floor((sheetWidth + qrPadding) / (qrSize + qrPadding)))
   );
   let gridRows = $derived(
-    Math.max(1, Math.floor((sheetHeight + qrPadding) / (qrSize + qrPadding)))
+    showPrintOverlay
+      ? printGridRows
+      : Math.max(
+          1,
+          Math.floor((sheetHeight + qrPadding) / (qrSize + qrPadding))
+        )
   );
-  let perSheet = $derived(gridCols * gridRows);
+  let perSheet = $derived(
+    showPrintOverlay ? printPerSheet : gridCols * gridRows
+  );
+
+  // Print event listeners
+  function recalculatePrintLayout() {
+    // For print, let CSS handle grid wrapping dynamically
+    const probe = document.createElement("div");
+    probe.style.position = "absolute";
+    probe.style.top = "0";
+    probe.style.left = "0";
+    probe.style.width = "100vw";
+    probe.style.height = "100vh";
+    probe.style.visibility = "hidden";
+    probe.style.pointerEvents = "none";
+    document.body.appendChild(probe);
+
+    const rect = probe.getBoundingClientRect();
+    printSheetWidth = pxToMm(rect.width);
+    printSheetHeight = pxToMm(rect.height);
+    document.body.removeChild(probe);
+
+    // Let CSS grid auto-fit columns/rows for print
+    printGridCols = 0;
+    printGridRows = 0;
+    printPerSheet = currentSheet.length;
+  }
+
+  function resetPrintLayout() {
+    printSheetWidth = 198;
+    printSheetHeight = 111.5;
+    printGridCols = 13;
+    printGridRows = 7;
+    printPerSheet = printGridCols * printGridRows;
+  }
+
+  onMount(() => {
+    window.addEventListener("beforeprint", recalculatePrintLayout);
+    window.addEventListener("afterprint", resetPrintLayout);
+  });
 
   onMount(() => {
     const cached = localStorage.getItem("sample_printouts");
@@ -93,10 +150,13 @@
     showPrintOverlay = true;
     // Wait for overlay to render, then print
     setTimeout(() => {
+      // Recalculate print layout before printing
+      recalculatePrintLayout();
       window.print();
       // Hide overlay after print (with a delay for print dialog to close)
       setTimeout(() => {
         showPrintOverlay = false;
+        resetPrintLayout();
       }, 500);
     }, 50);
   }
@@ -115,7 +175,7 @@
   }
 </script>
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6" id="sample-form">
   <Card.Root>
     <Card.Header>
       <Card.Title>Previous Code Sheets</Card.Title>
@@ -231,24 +291,17 @@
 
 {#if showPrintOverlay}
   <div class="print-overlay" aria-hidden={!showPrintOverlay}>
-    {#each chunkArray(currentSheet, perSheet) as pageCodes, pageIdx}
-      <div
-        class="qr-sheet print-sheet-only"
-        style="--grid-slot-size: {gridSlotPx}; --qr-svg-size: {qrSvgPx}; --qr-gap: {qrPadPx}; --grid-cols: {gridCols}; --grid-rows: {gridRows};{pageIdx >
-        0
-          ? 'page-break-before: always;'
-          : ''}"
-      >
-        {#each Array(perSheet) as _, i}
-          <div class="qr-item">
-            {#if pageCodes[i]}
-              <QrCode value={GetSampleUrl(pageCodes[i])} />
-              <div class="qr-id">{pageCodes[i]}</div>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    {/each}
+    <div
+      class="qr-sheet print-sheet-only"
+      style="--grid-slot-size: {gridSlotPx}; --qr-svg-size: {qrSvgPx}; --qr-gap: {qrPadPx};"
+    >
+      {#each currentSheet as id}
+        <div class="qr-item">
+          <QrCode value={GetSampleUrl(id)} />
+          <div class="qr-id">{id}</div>
+        </div>
+      {/each}
+    </div>
   </div>
 {/if}
 
@@ -289,6 +342,7 @@
     height: 100%;
     margin: 0;
     padding: 0;
+    break-inside: avoid;
     page-break-inside: avoid;
     display: flex;
     flex-direction: column;
@@ -317,39 +371,62 @@
       color: black;
       background: none;
       break-inside: avoid;
+      page-break-inside: avoid;
       flex-shrink: 0;
     }
   }
 
   /* svg sizing now handled above in .qr-item :global(svg) */
   @media print {
+    body *:not(.print-overlay) {
+      display: none !important;
+      pointer-events: none !important;
+    }
+    #sample-form {
+      display: none !important;
+      height: 0px;
+    }
     .print-overlay {
-      display: flex !important;
-      position: fixed;
+      display: block !important;
+      position: absolute;
       z-index: 99999;
       top: 0;
       left: 0;
       width: 100vw;
       min-height: 100vh;
       background: white;
-      align-items: flex-start;
-      justify-content: flex-start;
-      flex-wrap: wrap;
-      padding: 0;
-      margin: 0;
-      display: none;
       user-select: none;
       pointer-events: auto;
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
     .print-sheet-only.qr-sheet {
       margin: 6mm auto 6mm auto;
       background: white;
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fit,
+        minmax(var(--grid-slot-size, 15mm), 1fr)
+      );
+      grid-auto-flow: row;
+      grid-auto-rows: calc(var(--grid-slot-size, 15mm) + 2em);
+      gap: var(--qr-gap, 2mm);
+      width: 100vw;
+      overflow: visible;
+      max-width: 100vw;
+      box-sizing: border-box;
+      justify-content: flex-start;
+      align-items: flex-start;
+      place-items: start;
     }
-
-    * :not(.print-overlay *) {
-      display: none !important;
-      pointer-events: none !important;
+    .qr-item {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .qr-id {
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
   }
 </style>

@@ -35,10 +35,8 @@
   });
 </script>
 
-<main
-  class="w-full h-[100vh] max-h-[100vh] overflow-hidden p-6 flex flex-col justify-stretch"
->
-  <Card.Root class="grow">
+<main class="w-full overflow-hidden p-6 flex flex-col justify-stretch">
+  <Card.Root class="grow max-h-full overflow-y-auto pb-4">
     <Card.Content class="grow max-h-full flex flex-col justify-stretch">
       {#if currentPage === "quick_actions"}
         <div
@@ -127,4 +125,16 @@
 </main>
 
 <style>
+  main {
+    @media print {
+      max-height: none;
+      overflow: visible;
+      height: auto;
+    }
+
+    @media screen {
+      max-height: 100vh;
+      overflow: hidden;
+    }
+  }
 </style>
