@@ -108,15 +108,5 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          load: true
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ github.repository }}/reesource-tracker:latest
-      - name: Create build directory
-        run: mkdir -p build
-      - name: Save Docker image as tar
-        run: docker save ghcr.io/${{ github.repository }}/reesource-tracker:latest -o build/reesource-tracker-docker.tar
-      - name: Upload Docker image tar
-        uses: actions/upload-artifact@v4
-        with:
-          name: reesource-tracker-docker
-          path: build/reesource-tracker-docker.tar
