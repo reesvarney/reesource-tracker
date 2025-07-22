@@ -109,6 +109,7 @@ jobs:
           file: Dockerfile
           push: true
           load: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ github.repository }}/reesource-tracker:latest
       - name: Create build directory
         run: mkdir -p build
