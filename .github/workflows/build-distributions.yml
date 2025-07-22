@@ -108,6 +108,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
+          load: true
           tags: ghcr.io/${{ github.repository }}/reesource-tracker:latest
       - name: Create build directory
         run: mkdir -p build
