@@ -56,6 +56,18 @@
     videoElement.setAttribute("autoplay", "true");
     videoElement.setAttribute("playsinline", "true");
     videoElement.style.width = "100%";
+
+    // Flip preview if front-facing camera is selected
+    const selectedDevice = videoInputs.find(
+      (d) => d.deviceId === selectedVideoInput
+    );
+
+    if (selectedDevice && /front|user|integrated/i.test(selectedDevice.label)) {
+      videoElement.style.transform = "scaleX(-1)";
+    } else {
+      videoElement.style.transform = "";
+    }
+
     qrContainer.appendChild(videoElement);
 
     // Ensure the video stream is attached to the video element for preview
