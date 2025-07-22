@@ -97,14 +97,14 @@ jobs:
           context: .
           file: Dockerfile
           push: false
-          tags: sample-tracker:latest
+          tags: reesource-tracker:latest
           outputs: type=docker
       - name: Create build directory
         run: mkdir -p build
       - name: Save Docker image as tar
-        run: docker save sample-tracker:latest -o build/sample-tracker-docker.tar
+        run: docker save reesource-tracker:latest -o build/reesource-tracker-docker.tar
       - name: Upload Docker image tar
         uses: actions/upload-artifact@v4
         with:
-          name: sample-tracker-docker
+          name: reesource-tracker-docker
           path: build/reesource-tracker-docker.tar
