@@ -47,16 +47,22 @@
     window.removeEventListener("resize", calculatePageSize);
   });
 
-  // Helper to get all child ids for a given parent id
-  function getChildProductIds(parentId: string) {
-    return $AppStore.products
-      .filter((p) => p.parentProductID === parentId)
-      .map((p) => p.id);
+  // Helper to get all descendant ids for a given parent id (recursive)
+  function getDescendantProductIds(parentId: string): string[] {
+    const directChildren = $AppStore.products.filter((p) => p.parentProductID === parentId);
+    let allIds: string[] = directChildren.map((p) => p.id);
+    for (const child of directChildren) {
+      allIds = allIds.concat(getDescendantProductIds(child.id));
+    }
+    return allIds;
   }
-  function getChildLocationIds(parentId: string) {
-    return $AppStore.locations
-      .filter((l) => l.parentLocationID === parentId)
-      .map((l) => l.id);
+  function getDescendantLocationIds(parentId: string): string[] {
+    const directChildren = $AppStore.locations.filter((l) => l.parentLocationID === parentId);
+    let allIds: string[] = directChildren.map((l) => l.id);
+    for (const child of directChildren) {
+      allIds = allIds.concat(getDescendantLocationIds(child.id));
+    }
+    return allIds;
   }
 
   const filteredSamples = $derived(() => {
@@ -64,9 +70,11 @@
     if (selectedProduct) {
       if (selectedProduct.startsWith("any-")) {
         const parentId = selectedProduct.slice(4);
-        const childIds = getChildProductIds(parentId);
+        const descendantIds = getDescendantProductIds(parentId);
+        // Include both parent and all descendants
+        const validIds = [parentId, ...descendantIds];
         result = result.filter(
-          (sample) => sample.Product?.id && childIds.includes(sample.Product.id)
+          (sample) => sample.Product?.id && validIds.includes(sample.Product.id)
         );
       } else {
         result = result.filter(
@@ -77,9 +85,9 @@
     if (selectedLocation) {
       if (selectedLocation.startsWith("any-")) {
         const parentId = selectedLocation.slice(4);
-        const childIds = getChildLocationIds(parentId);
-        // Include both parent and its children
-        const validIds = [parentId, ...childIds];
+        const descendantIds = getDescendantLocationIds(parentId);
+        // Include both parent and all descendants
+        const validIds = [parentId, ...descendantIds];
         result = result.filter(
           (sample) =>
             sample.Location?.id && validIds.includes(sample.Location.id)
