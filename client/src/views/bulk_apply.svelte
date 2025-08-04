@@ -13,7 +13,6 @@
   // QR scan handler
   function handleQRScan(text: string) {
     let sampleId: string | null = null;
-    console.log("QR Code scanned:", text);
     try {
       // Try to parse as URL and extract sample_id param
       const url = new URL(text);
