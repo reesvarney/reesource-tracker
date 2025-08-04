@@ -1,6 +1,7 @@
 <script lang="ts">
   import QRScanner from "$lib/components/qr_scanner/qr_scanner.svelte";
   import * as InputOTP from "$lib/components/ui/input-otp";
+  import { toast } from "svelte-sonner";
   let { active = $bindable(false) } = $props();
 
   let selectedVideoInput: string = $state("");
@@ -24,10 +25,10 @@
       if (url.host === window.location.host) {
         window.location.href = url.href;
       } else {
-        alert("Scanned QR code is not for this host.");
+        toast.error("Scanned QR code is not for this host.");
       }
     } catch (e) {
-      alert("Scanned QR code is not a valid URL.");
+      toast.error("Scanned QR code is not a valid URL.");
     }
   }
 

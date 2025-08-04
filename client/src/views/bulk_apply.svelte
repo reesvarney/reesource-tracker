@@ -4,6 +4,7 @@
   import ProductSelect from "$lib/components/selects/product-select.svelte";
   import LocationSelect from "$lib/components/selects/location-select.svelte";
   import StateSelect from "$lib/components/selects/state-select.svelte";
+  import { toast } from "svelte-sonner";
   let scannedIds: string[] = $state([]);
   let selectedProduct = $state("");
   let selectedLocation = $state("");
@@ -33,6 +34,7 @@
         (id) => id.toUpperCase() === sampleId!.toUpperCase()
       );
       if (!exists) {
+        toast.success(`Scanned sample ID: ${sampleId}`);
         scannedIds = [...scannedIds, sampleId];
       }
     }
@@ -55,13 +57,13 @@
       !updateState &&
       modNames.length === 0
     ) {
-      alert(
+      toast.error(
         "Please enable at least one field to update or add at least one mod."
       );
       return;
     }
     if (scannedIds.length === 0) {
-      alert("No samples scanned.");
+      toast.error("No samples scanned.");
       return;
     }
     let errors = 0;
@@ -125,12 +127,13 @@
       }
     }
     if (msg.length > 0) {
-      alert(msg.join("\n"));
+      toast(msg.join("\n"));
     }
   }
 
   function clearScanned() {
     scannedIds = [];
+    toast("Cleared all scanned sample IDs.");
   }
 </script>
 

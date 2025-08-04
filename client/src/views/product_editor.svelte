@@ -12,6 +12,7 @@
     TableRow,
     TableCell,
   } from "$lib/components/ui/table";
+  import { toast } from "svelte-sonner";
 
   let updateTimeouts = new Map();
   // Store for parent product IDs, since it needs a string value for Select
@@ -32,11 +33,16 @@
       name: product.name,
       parent_product_id: parent_product_id[product.id] || null,
     };
-    await fetch(`/api/product/${product.id}`, {
+    const res = await fetch(`/api/product/${product.id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) {
+      toast.error("Failed to update product.");
+      throw new Error(await res.text());
+    }
+    toast.success("Product updated successfully.");
   }
 
   // Debounced update function

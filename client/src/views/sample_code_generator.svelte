@@ -8,6 +8,7 @@
   import { CircleAlertIcon } from "lucide-svelte";
   import LocationSelect from "$lib/components/selects/location-select.svelte";
   import ProductSelect from "$lib/components/selects/product-select.svelte";
+  import { toast } from "svelte-sonner";
   let numSamples = $state(10);
   let generating = $state(false);
   let error = $state("");
@@ -118,6 +119,7 @@
     e.preventDefault(); // Prevent default form submission
     error = "";
     generating = true;
+    toast.loading("Generating samples...");
     const res = await fetch(`/api/generate_samples?num_samples=${numSamples}`);
     if (!res.ok) {
       throw new Error("Failed to generate samples");
@@ -129,13 +131,13 @@
       { timestamp: Date.now(), ids: [...currentSheet] },
       ...printouts,
     ];
-    // Only keep the 10 most recent printouts
     if (printouts.length > 10) printouts = printouts.slice(0, 10);
     savePrintouts();
     generating = false;
+    toast.success("Samples generated successfully!");
   }
 
-  function SelectSheed(ids: string[]) {
+  function SelectSheet(ids: string[]) {
     currentSheet = ids;
     showPrintOverlay = false; // Hide print overlay if showing
   }
@@ -208,7 +210,7 @@
                 </div>
               </details>
               <div class="flex flex-row justify-end gap-2">
-                <Button onclick={() => SelectSheed(p.ids)} size="sm"
+                <Button onclick={() => SelectSheet(p.ids)} size="sm"
                   >Select</Button
                 >
                 <Button

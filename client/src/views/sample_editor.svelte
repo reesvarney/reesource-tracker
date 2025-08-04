@@ -10,6 +10,7 @@
   import { Sample } from "$lib/components/sample";
   import * as Table from "$lib/components/ui/table";
   import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+  import { toast } from "svelte-sonner";
 
   let sample: Sample = $state(new Sample({}));
   let showFittedOnly = $state(false);
@@ -66,6 +67,7 @@
       } else {
         new_mod_name = "";
         await fetchSample();
+        toast.success("Mod added successfully.");
       }
     } catch (e) {
       add_mod_error = "Failed to add mod.";
@@ -79,6 +81,7 @@
       method: "DELETE",
     });
     await fetchSample();
+    toast.success("Mod removed successfully.");
   }
 
   async function saveSample(e: SubmitEvent) {
@@ -91,9 +94,13 @@
       method: "POST",
       body: form,
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      toast.error("Failed to update sample.");
+      throw new Error(await res.text());
+    }
     // Optionally, show a success message or redirect
     await fetchSample();
+    toast.success("Sample updated successfully.");
   }
 
   onMount(fetchSample);

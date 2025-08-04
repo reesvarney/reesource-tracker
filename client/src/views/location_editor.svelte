@@ -14,6 +14,7 @@
   } from "$lib/components/ui/table";
 
   import type { SampleLocation } from "$lib/components/location";
+  import { toast } from "svelte-sonner";
 
   let updateTimeouts = new Map();
   // Store for parent location IDs, since it needs a string value for Select
@@ -34,11 +35,16 @@
       description: location.description,
       parent_location_id: parent_location_id[location.id] || null,
     };
-    await fetch(`/api/location/${location.id}`, {
+    const res = await fetch(`/api/location/${location.id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) {
+      toast.error("Failed to update location.");
+      throw new Error(await res.text());
+    }
+    toast.success("Location updated successfully.");
   }
 
   function debounceUpdate(location: SampleLocation) {
