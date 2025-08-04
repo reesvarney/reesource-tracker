@@ -5,6 +5,7 @@
   import LocationSelect from "$lib/components/selects/location-select.svelte";
   import StateSelect from "$lib/components/selects/state-select.svelte";
   import { toast } from "svelte-sonner";
+  import * as InputOTP from "$lib/components/ui/input-otp";
   let scannedIds: string[] = $state([]);
   let selectedProduct = $state("");
   let selectedLocation = $state("");
@@ -41,6 +42,31 @@
   }
 
   let selectedVideoInput: string = $state("");
+
+  // Manual sample code entry
+  let manualSample: string = $state("");
+  let manualSampleError: string = $state("");
+
+  $effect(() => {
+    if (manualSample.length === 6) {
+      const formatted =
+        `${manualSample.slice(0, 2)}-${manualSample.slice(2, 4)}-${manualSample.slice(4, 6)}`.toUpperCase();
+      if (/^[0-9A-Z]{2}-[0-9A-Z]{2}-[0-9A-Z]{2}$/.test(formatted)) {
+        // Only add if not already present (case-insensitive)
+        const exists = scannedIds.some((id) => id.toUpperCase() === formatted);
+        if (!exists) {
+          scannedIds = [...scannedIds, formatted];
+          toast.success(`Added sample ID: ${formatted}`);
+          manualSampleError = "";
+        } else {
+          manualSampleError = "Sample ID already added.";
+        }
+      } else {
+        manualSampleError = "Invalid sample code format.";
+      }
+      manualSample = "";
+    }
+  });
 
   let updateProduct = $state(true);
   let updateLocation = $state(true);
@@ -147,6 +173,39 @@
       autoStart={active}
     />
   </div>
+  <div class="self-center mt-6 flex flex-col items-center gap-6">
+    <label for="manual-id-input">Or manually enter the sample ID</label>
+    <InputOTP.Root
+      maxlength={6}
+      bind:value={manualSample}
+      id="manual-id-input"
+      disabled={modLoading}
+    >
+      {#snippet children({ cells })}
+        <InputOTP.Group>
+          {#each cells.slice(0, 2) as cell}
+            <InputOTP.Slot {cell} />
+          {/each}
+        </InputOTP.Group>
+        <InputOTP.Separator />
+        <InputOTP.Group>
+          {#each cells.slice(2, 4) as cell}
+            <InputOTP.Slot {cell} />
+          {/each}
+        </InputOTP.Group>
+        <InputOTP.Separator />
+        <InputOTP.Group>
+          {#each cells.slice(4, 6) as cell}
+            <InputOTP.Slot {cell} />
+          {/each}
+        </InputOTP.Group>
+      {/snippet}
+    </InputOTP.Root>
+    {#if manualSampleError}
+      <span class="text-red-500 text-sm">{manualSampleError}</span>
+    {/if}
+  </div>
+
   <div>
     <label class="font-bold flex items-center gap-2">
       <input type="checkbox" bind:checked={updateProduct} />
