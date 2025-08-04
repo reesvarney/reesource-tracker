@@ -156,6 +156,10 @@
 </script>
 
 <div id={containerId} class="border p-4"></div>
+<p class="text-sm text-gray-500 mt-6">
+  QR Codes are scanned and processed locally on your device. No data is sent to
+  the server.
+</p>
 <div class="mt-2 flex items-center gap-2">
   <label class="block font-bold" for="camera-select">Camera</label>
   {#if videoInputError}

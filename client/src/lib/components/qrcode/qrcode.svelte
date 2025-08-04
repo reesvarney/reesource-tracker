@@ -8,7 +8,7 @@
     updateQRCode();
   });
 
-  function updateQRCode() {
+  async function updateQRCode() {
     if (value) {
       // @ts-ignore
       QRCode.toDataURL(value, {

@@ -138,8 +138,16 @@
   }
 
   function SelectSheet(ids: string[]) {
-    currentSheet = ids;
-    showPrintOverlay = false; // Hide print overlay if showing
+    toast.loading("Loading selected samples...");
+    (async () => {
+      currentSheet = [];
+      for (const id of ids) {
+        currentSheet.push(id);
+      }
+      currentSheet = currentSheet; // Trigger reactivity
+      showPrintOverlay = false; // Hide print overlay if showing
+      toast.success("Selected samples loaded!");
+    })();
   }
 
   function deletePrintout(idx: number) {
@@ -167,14 +175,9 @@
     return new Date(ts).toLocaleString();
   }
 
-  // Helper to chunk an array into arrays of size n
-  function chunkArray<T>(arr: T[], n: number): T[][] {
-    const result: T[][] = [];
-    for (let i = 0; i < arr.length; i += n) {
-      result.push(arr.slice(i, i + n));
-    }
-    return result;
-  }
+  let previewSheet = $derived(
+    currentSheet.slice(0, perSheet).map((id) => id || "")
+  );
 </script>
 
 <div class="flex flex-col gap-6" id="sample-form">
@@ -271,11 +274,11 @@
           class="qr-sheet print-sheet-only"
           style="--grid-slot-size: {gridSlotPx}; --qr-svg-size: {qrSvgPx}; --qr-gap: {qrPadPx}; --grid-cols: {gridCols}; --grid-rows: {gridRows};"
         >
-          {#each currentSheet as id, i}
+          {#each previewSheet as id, i}
             <div class="qr-item">
-              {#if currentSheet[i]}
-                <QrCode value={GetSampleUrl(currentSheet[i])} />
-                <div class="qr-id">{currentSheet[i]}</div>
+              {#if previewSheet[i]}
+                <QrCode value={GetSampleUrl(previewSheet[i])} />
+                <div class="qr-id">{previewSheet[i]}</div>
               {/if}
             </div>
           {/each}
