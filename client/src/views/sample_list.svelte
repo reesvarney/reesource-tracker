@@ -9,20 +9,42 @@
   let selectedLocation = $state("");
   let page = $state(1);
   import { onMount, onDestroy } from "svelte";
-  let pageSize = $state(20); // Will be dynamically set based on available space
-  let tableContainer: HTMLDivElement;
-  const ROW_HEIGHT = 48; // px, adjust if your row height is different
-  const HEADER_HEIGHT = 56; // px, adjust if your table header is different
-  const PAGINATION_HEIGHT = 64; // px, adjust if your pagination controls are different
-  const FILTERS_HEIGHT = 64; // px, adjust if your filters area is different
-  const MARGIN = 32; // px, extra margin for safety
+  let pageSize = $state(1);
+  let tableContainer: HTMLDivElement | null = $state(null);
+  let firstRow: HTMLElement | null = $state(null);
+  let paginationContainer: HTMLDivElement | null = $state(null);
 
   function calculatePageSize() {
-    if (!tableContainer) return;
-    const totalHeight = tableContainer.clientHeight;
-    const available =
-      totalHeight - HEADER_HEIGHT - PAGINATION_HEIGHT - FILTERS_HEIGHT - MARGIN;
-    const rows = Math.max(1, Math.floor(available / ROW_HEIGHT));
+    if (!tableContainer) {
+      console.warn("tableContainer not available, cannot calculate page size");
+      setTimeout(() => {
+        // Fallback in case firstRow is not immediately available
+        calculatePageSize();
+      }, 1000);
+      return;
+    }
+    tableContainer.style.height = "100%";
+
+    if (!firstRow) {
+      // Fallback if firstRow is not available
+      pageSize = 1;
+      console.warn("firstRow not available, using fallback pageSize of 1");
+      setTimeout(() => {
+        // Fallback in case firstRow is not immediately available
+        calculatePageSize();
+      }, 1000);
+      return;
+    }
+
+    let ROW_HEIGHT = 9999;
+    const measured = firstRow.clientHeight;
+    if (measured && measured > 0) {
+      ROW_HEIGHT = measured;
+    }
+    const totalHeight =
+      tableContainer.clientHeight - (paginationContainer?.clientHeight || 0) ||
+      0;
+    const rows = Math.max(1, Math.floor(totalHeight / ROW_HEIGHT));
     pageSize = rows;
   }
 
@@ -123,78 +145,100 @@
   }
 </script>
 
-<div class="flex flex-col h-full justify-stretch">
-  <div
-    class="mb-4 flex flex-wrap items-center gap-6 flex-row w-full"
-    style="min-height:64px"
-  >
-    <div>
-      <ProductSelect bind:bindValue={selectedProduct} filterMode={true} />
-    </div>
-    <div>
-      <LocationSelect bind:bindValue={selectedLocation} filterMode={true} />
-    </div>
-  </div>
-  <div class="grow" bind:this={tableContainer}>
-    <Table.Root>
-      <Table.Header>
-        <Table.Row>
-          <Table.Head>ID</Table.Head>
-          <Table.Head>Product</Table.Head>
-          <Table.Head>Mods</Table.Head>
-          <Table.Head>Location</Table.Head>
-          <Table.Head>Status</Table.Head>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {#each paginatedSamples() as sample}
-          <Table.Row>
-            <Table.Cell>{sample.DisplayId}</Table.Cell>
-            <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
-            <Table.Cell>{sample.ModSummary}</Table.Cell>
-            <Table.Cell>{sample.Location?.name}</Table.Cell>
-            <Table.Cell>{sample.Status}</Table.Cell>
-            <Table.Cell>
-              <Button onclick={() => EditSample(sample.DisplayId)}>Edit</Button>
-            </Table.Cell>
-          </Table.Row>
-        {/each}
-      </Table.Body>
-    </Table.Root>
-  </div>
-  <!-- Pagination Controls -->
-  <div class="flex justify-center mt-6">
-    <Pagination.Root
-      count={filteredSamples().length}
-      perPage={pageSize}
-      bind:page
+<div class="max-h-full grow h-full overflow-auto">
+  <div class="flex flex-col h-full max-h-full">
+    <div
+      class="mb-4 flex flex-wrap items-center gap-6 flex-row w-full"
+      style="min-height:64px"
     >
-      {#snippet children({ pages, currentPage })}
-        <Pagination.Content>
-          <Pagination.Item>
-            <Pagination.PrevButton disabled={page === 1} />
-          </Pagination.Item>
-          {#each pages as pageObj (pageObj.key)}
-            {#if pageObj.type === "ellipsis"}
-              <Pagination.Item>
-                <Pagination.Ellipsis />
-              </Pagination.Item>
+      <div>
+        <ProductSelect bind:bindValue={selectedProduct} filterMode={true} />
+      </div>
+      <div>
+        <LocationSelect bind:bindValue={selectedLocation} filterMode={true} />
+      </div>
+    </div>
+    <div
+      bind:this={tableContainer}
+      class="grow basis-0 max-h-full h-full overflow-hidden"
+    >
+      <Table.Root>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head>ID</Table.Head>
+            <Table.Head>Product</Table.Head>
+            <Table.Head>Mods</Table.Head>
+            <Table.Head>Location</Table.Head>
+            <Table.Head>Status</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {#each paginatedSamples() as sample, i}
+            {#if i === 0}
+              <Table.Row bind:ref={firstRow}>
+                <Table.Cell>{sample.DisplayId}</Table.Cell>
+                <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
+                <Table.Cell>{sample.ModSummary}</Table.Cell>
+                <Table.Cell>{sample.Location?.name}</Table.Cell>
+                <Table.Cell>{sample.Status}</Table.Cell>
+                <Table.Cell>
+                  <Button onclick={() => EditSample(sample.DisplayId)}
+                    >Edit</Button
+                  >
+                </Table.Cell>
+              </Table.Row>
             {:else}
-              <Pagination.Item>
-                <Pagination.Link
-                  page={pageObj}
-                  isActive={currentPage === pageObj.value}
-                >
-                  {pageObj.value}
-                </Pagination.Link>
-              </Pagination.Item>
+              <Table.Row>
+                <Table.Cell>{sample.DisplayId}</Table.Cell>
+                <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
+                <Table.Cell>{sample.ModSummary}</Table.Cell>
+                <Table.Cell>{sample.Location?.name}</Table.Cell>
+                <Table.Cell>{sample.Status}</Table.Cell>
+                <Table.Cell>
+                  <Button onclick={() => EditSample(sample.DisplayId)}
+                    >Edit</Button
+                  >
+                </Table.Cell>
+              </Table.Row>
             {/if}
           {/each}
-          <Pagination.Item>
-            <Pagination.NextButton disabled={page === totalPages()} />
-          </Pagination.Item>
-        </Pagination.Content>
-      {/snippet}
-    </Pagination.Root>
+        </Table.Body>
+      </Table.Root>
+    </div>
+    <!-- Pagination Controls -->
+    <div class="flex justify-center mt-6" bind:this={paginationContainer}>
+      <Pagination.Root
+        count={filteredSamples().length}
+        perPage={pageSize}
+        bind:page
+      >
+        {#snippet children({ pages, currentPage })}
+          <Pagination.Content>
+            <Pagination.Item>
+              <Pagination.PrevButton disabled={page === 1} />
+            </Pagination.Item>
+            {#each pages as pageObj (pageObj.key)}
+              {#if pageObj.type === "ellipsis"}
+                <Pagination.Item>
+                  <Pagination.Ellipsis />
+                </Pagination.Item>
+              {:else}
+                <Pagination.Item>
+                  <Pagination.Link
+                    page={pageObj}
+                    isActive={currentPage === pageObj.value}
+                  >
+                    {pageObj.value}
+                  </Pagination.Link>
+                </Pagination.Item>
+              {/if}
+            {/each}
+            <Pagination.Item>
+              <Pagination.NextButton disabled={page === totalPages()} />
+            </Pagination.Item>
+          </Pagination.Content>
+        {/snippet}
+      </Pagination.Root>
+    </div>
   </div>
 </div>

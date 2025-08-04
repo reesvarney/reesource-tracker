@@ -44,7 +44,7 @@
 
 <main class="w-full overflow-hidden p-6 flex flex-col justify-stretch">
   <Card.Root class="grow max-h-full overflow-y-auto pb-4">
-    <Card.Content class="grow max-h-full flex flex-col justify-stretch">
+    <Card.Content class="grow max-h-full flex flex-col justify-stretch h-full">
       {#if currentPage === "quick_actions"}
         <div
           class="flex flex-col gap-4 items-stretch w-full h-full justify-center p-2"
@@ -82,7 +82,7 @@
           >
         </div>
       {:else}
-        <Tabs.Root bind:value={currentPage} class="w-full grow">
+        <Tabs.Root bind:value={currentPage} class="w-full grow flex flex-col">
           <Tabs.List>
             <Tabs.Trigger value="find_sample" class="w-full"
               >Find Sample</Tabs.Trigger
