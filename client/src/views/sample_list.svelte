@@ -49,7 +49,9 @@
 
   // Helper to get all descendant ids for a given parent id (recursive)
   function getDescendantProductIds(parentId: string): string[] {
-    const directChildren = $AppStore.products.filter((p) => p.parentProductID === parentId);
+    const directChildren = $AppStore.products.filter(
+      (p) => p.parentProductID === parentId
+    );
     let allIds: string[] = directChildren.map((p) => p.id);
     for (const child of directChildren) {
       allIds = allIds.concat(getDescendantProductIds(child.id));
@@ -57,7 +59,9 @@
     return allIds;
   }
   function getDescendantLocationIds(parentId: string): string[] {
-    const directChildren = $AppStore.locations.filter((l) => l.parentLocationID === parentId);
+    const directChildren = $AppStore.locations.filter(
+      (l) => l.parentLocationID === parentId
+    );
     let allIds: string[] = directChildren.map((l) => l.id);
     for (const child of directChildren) {
       allIds = allIds.concat(getDescendantLocationIds(child.id));
@@ -107,6 +111,12 @@
   const paginatedSamples = $derived(() =>
     filteredSamples().slice((page - 1) * pageSize, page * pageSize)
   );
+
+  $effect(() => {
+    if (selectedLocation || selectedProduct) {
+      page = 1; // Reset to first page when filters change
+    }
+  });
 
   function EditSample(sampleId: string) {
     window.location.href = `/app?sample_id=${sampleId}`;
