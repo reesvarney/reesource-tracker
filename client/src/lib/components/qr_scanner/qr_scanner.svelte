@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { onMount, onDestroy, createEventDispatcher } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import QrScanner from "qr-scanner";
+  import { Switch } from "$lib/components/ui/switch/index.js";
 
   let videoInputs: MediaDeviceInfo[] = $state([]);
   let {
@@ -11,14 +12,14 @@
     onQrCodeScan = $bindable((text: string) => {}),
   } = $props();
   let videoInputError: string = $state("");
-
+  let allowCamera = $state(
+    localStorage.getItem("qrScannerCameraOn") === "true"
+  );
   let qrScanner: QrScanner | null = null;
   let videoElement: HTMLVideoElement | null = null;
-  let scanning = false;
 
   async function startScanner() {
-    if (scanning) return;
-    scanning = true;
+    if (videoElement) return;
     const qrContainer = document.getElementById(containerId);
     if (!qrContainer) return;
     qrContainer.innerHTML = "";
@@ -78,7 +79,6 @@
   }
 
   function stopScanner() {
-    scanning = false;
     if (qrScanner) {
       qrScanner.destroy();
       qrScanner = null;
@@ -93,17 +93,14 @@
     if (qrContainer) qrContainer.innerHTML = "";
   }
 
-  $effect(() => {
-    if (autoStart && selectedVideoInput) {
-      restartScanner();
-    } else if (!autoStart) {
-      stopScanner();
-    }
-  });
-
   async function restartScanner() {
-    stopScanner();
-    await startScanner();
+    if (localStorage.getItem("qrScannerCameraOn") === "true") {
+      allowCamera = true;
+      stopScanner();
+      await startScanner();
+    } else {
+      allowCamera = false;
+    }
   }
 
   async function enumerateVideoInputs() {
@@ -131,15 +128,35 @@
 
   onMount(async () => {
     await enumerateVideoInputs();
-    if (autoStart && selectedVideoInput) startScanner();
   });
+
+  $effect(() => {
+    if (allowCamera) {
+      // Persist camera state in localStorage
+      localStorage.setItem("qrScannerCameraOn", "true");
+      if (!qrScanner) startScanner();
+    } else {
+      // Persist camera state in localStorage
+      localStorage.setItem("qrScannerCameraOn", "false");
+      stopScanner();
+    }
+  });
+
+  $effect(() => {
+    if (autoStart && selectedVideoInput) {
+      restartScanner();
+    } else if (!autoStart) {
+      stopScanner();
+    }
+  });
+
   onDestroy(() => {
     stopScanner();
   });
 </script>
 
 <div id={containerId} class="border p-4"></div>
-<div class="mt-2">
+<div class="mt-2 flex items-center gap-2">
   <label class="block font-bold" for="camera-select">Camera</label>
   {#if videoInputError}
     <div class="text-destructive">{videoInputError}</div>
@@ -156,6 +173,12 @@
       {/each}
     </select>
   {/if}
+  <div class="ml-4 flex items-center gap-2">
+    <Switch bind:checked={allowCamera} id="camera-switch"></Switch>
+    <label for="camera-switch" class="select-none cursor-pointer">
+      {allowCamera ? "Camera On" : "Camera Off"}
+    </label>
+  </div>
 </div>
 
 <style>
