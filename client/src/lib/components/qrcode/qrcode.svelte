@@ -12,7 +12,6 @@
     if (value) {
       // @ts-ignore
       QRCode.toDataURL(value, {
-        width: size,
         margin: 0,
         errorCorrectionLevel: "L",
       }).then((url: string) => (dataUrl = url));

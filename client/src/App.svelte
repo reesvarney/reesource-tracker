@@ -12,6 +12,7 @@
   import { onMount } from "svelte";
   import * as Card from "$lib/components/ui/card";
   import { UpdateAppStore } from "$lib/components/app_store";
+  import { Toaster } from "$lib/components/ui/sonner/index.js";
 
   let currentPage = $state("quick_actions");
   onMount(() => {
@@ -33,7 +34,13 @@
       window.history.replaceState({}, "", url.toString());
     }
   });
+
+  let bulk_apply_active = $derived(currentPage === "bulk_apply");
+  let find_sample_active = $derived(currentPage === "find_sample");
+  $inspect(bulk_apply_active, find_sample_active);
 </script>
+
+<Toaster />
 
 <main class="w-full overflow-hidden p-6 flex flex-col justify-stretch">
   <Card.Root class="grow max-h-full overflow-y-auto pb-4">
@@ -98,10 +105,10 @@
             {/if}
           </Tabs.List>
           <Tabs.Content value="find_sample">
-            <FindSample />
+            <FindSample bind:active={find_sample_active} />
           </Tabs.Content>
           <Tabs.Content value="bulk_apply">
-            <BulkApply />
+            <BulkApply bind:active={bulk_apply_active} />
           </Tabs.Content>
           <Tabs.Content value="sample_list">
             <SampleList />

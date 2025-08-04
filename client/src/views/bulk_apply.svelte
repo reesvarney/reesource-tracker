@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
   import { Button } from "$lib/components/ui/button";
-  import * as Select from "$lib/components/ui/select";
-  import { BrowserQRCodeReader } from "@zxing/browser";
+  import QRScanner from "$lib/components/qr_scanner/qr_scanner.svelte";
   import ProductSelect from "$lib/components/selects/product-select.svelte";
   import LocationSelect from "$lib/components/selects/location-select.svelte";
   import StateSelect from "$lib/components/selects/state-select.svelte";
@@ -10,114 +8,42 @@
   let selectedProduct = $state("");
   let selectedLocation = $state("");
   let sampleState = $state("");
-  let codeReader: BrowserQRCodeReader | null = null;
-  let videoElement: HTMLVideoElement | null = null;
-  let scanning = false;
 
-  let videoInputs: MediaDeviceInfo[] = $state([]);
+  let { active = $bindable(false) } = $props();
+  // QR scan handler
+  function handleQRScan(text: string) {
+    let sampleId: string | null = null;
+    console.log("QR Code scanned:", text);
+    try {
+      // Try to parse as URL and extract sample_id param
+      const url = new URL(text);
+
+      const param = url.searchParams.get("sample_id");
+      if (param && /^[0-9A-Z]{2}-[0-9A-Z]{2}-[0-9A-Z]{2}$/i.test(param)) {
+        sampleId = param.toUpperCase();
+      }
+    } catch (e) {
+      // Not a valid URL, fallback to direct code
+      if (/^[0-9A-Z]{2}-[0-9A-Z]{2}-[0-9A-Z]{2}$/i.test(text)) {
+        sampleId = text.toUpperCase();
+      }
+    }
+    if (sampleId) {
+      // Only add if not already present (case-insensitive)
+      const exists = scannedIds.some(
+        (id) => id.toUpperCase() === sampleId!.toUpperCase()
+      );
+      if (!exists) {
+        scannedIds = [...scannedIds, sampleId];
+      }
+    }
+  }
+
   let selectedVideoInput: string = $state("");
-  let videoInputError: string = $state("");
 
   let updateProduct = $state(true);
   let updateLocation = $state(true);
   let updateState = $state(true);
-
-  async function enumerateVideoInputs() {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      videoInputs = devices.filter((d) => d.kind === "videoinput");
-      if (videoInputs.length > 0) {
-        if (
-          !selectedVideoInput ||
-          !videoInputs.find((d) => d.deviceId === selectedVideoInput)
-        ) {
-          selectedVideoInput = videoInputs[0].deviceId;
-        }
-        videoInputError = "";
-      } else {
-        videoInputError = "No video input devices found.";
-        selectedVideoInput = "";
-      }
-    } catch (e) {
-      videoInputError = "Unable to enumerate video devices.";
-      videoInputs = [];
-      selectedVideoInput = "";
-    }
-  }
-
-  async function startScanner() {
-    if (scanning) return;
-    codeReader = new BrowserQRCodeReader();
-    scanning = true;
-    const qrContainer = document.getElementById("qr-reader-bulk");
-    if (!qrContainer) return;
-    qrContainer.innerHTML = "";
-    videoElement = document.createElement("video");
-    videoElement.setAttribute("autoplay", "true");
-    videoElement.setAttribute("playsinline", "true");
-    videoElement.style.width = "100%";
-
-    // Flip preview if front-facing camera is selected
-    const selectedDevice = videoInputs.find(
-      (d) => d.deviceId === selectedVideoInput
-    );
-
-    if (selectedDevice && /front|user|integrated/i.test(selectedDevice.label)) {
-      videoElement.style.transform = "scaleX(-1)";
-    } else {
-      videoElement.style.transform = "";
-    }
-
-    qrContainer.appendChild(videoElement);
-
-    // Ensure the video stream is attached to the video element for preview
-    codeReader.decodeFromVideoDevice(
-      selectedVideoInput || undefined,
-      videoElement,
-      (result, err, controls) => {
-        if (result && result.getText) {
-          const text = result.getText();
-          let sampleId: string | null = null;
-          try {
-            // Try to parse as URL and extract sample_id param
-            const url = new URL(text);
-            const param = url.searchParams.get("sample_id");
-            if (param && /^[0-9A-Z]{2}-[0-9A-Z]{2}-[0-9A-Z]{2}$/i.test(param)) {
-              sampleId = param.toUpperCase();
-            }
-          } catch (e) {
-            // Not a valid URL, fallback to direct code
-            if (/^[0-9A-Z]{2}-[0-9A-Z]{2}-[0-9A-Z]{2}$/i.test(text)) {
-              sampleId = text.toUpperCase();
-            }
-          }
-          if (sampleId) {
-            // Only add if not already present (case-insensitive)
-            const exists = scannedIds.some(
-              (id) => id.toUpperCase() === sampleId.toUpperCase()
-            );
-            if (!exists) {
-              scannedIds = [...scannedIds, sampleId];
-            }
-          }
-        }
-        // Ignore errors (err) for now
-      }
-    );
-  }
-
-  $effect(() => {
-    if (selectedVideoInput) {
-      restartScanner();
-    }
-  });
-
-  async function restartScanner() {
-    scanning = false;
-    await startScanner();
-  }
-
-  // Mods quick add/remove for all scanned samples
   let modNames: string[] = $state([]);
   let modInput = $state("");
   let modError = $state("");
@@ -207,57 +133,18 @@
   function clearScanned() {
     scannedIds = [];
   }
-
-  onMount(async () => {
-    await enumerateVideoInputs();
-    await startScanner();
-  });
-  function stopScanner() {
-    scanning = false;
-    if (codeReader) {
-      codeReader = null;
-    }
-    if (videoElement && videoElement.srcObject) {
-      const tracks = (videoElement.srcObject as MediaStream).getTracks();
-      tracks.forEach((track) => track.stop());
-      videoElement.srcObject = null;
-    }
-    videoElement = null;
-    const qrContainer = document.getElementById("qr-reader-bulk");
-    if (qrContainer) qrContainer.innerHTML = "";
-  }
-
-  onDestroy(() => {
-    stopScanner();
-  });
 </script>
 
 <div class="space-y-4">
-  <div>
-    <label class="block font-bold" for="camera-select">Camera</label>
-    {#if videoInputError}
-      <div class="text-destructive">{videoInputError}</div>
-    {:else}
-      <Select.Root bind:value={selectedVideoInput} type="single">
-        <Select.Trigger class="w-full" id="camera-select">
-          {selectedVideoInput
-            ? videoInputs.find((d) => d.deviceId === selectedVideoInput)
-                ?.label || "Camera"
-            : "Select camera"}
-        </Select.Trigger>
-        <Select.Content class="w-full">
-          {#each videoInputs as device}
-            <Select.Item value={device.deviceId}
-              >{device.label || `Camera ${device.deviceId}`}</Select.Item
-            >
-          {/each}
-        </Select.Content>
-      </Select.Root>
-    {/if}
+  <div class="flex flex-col items-center shrink">
+    <label for="qr-reader-bulk" class="mb-6">Scan a QR code</label>
+    <QRScanner
+      containerId="qr-reader-bulk"
+      bind:selectedVideoInput
+      onQrCodeScan={handleQRScan}
+      autoStart={active}
+    />
   </div>
-
-  <div id="qr-reader-bulk" class="border p-4"></div>
-
   <div>
     <label class="font-bold flex items-center gap-2">
       <input type="checkbox" bind:checked={updateProduct} />
