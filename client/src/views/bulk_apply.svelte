@@ -14,6 +14,7 @@
   let { active = $bindable(false) } = $props();
   // QR scan handler
   function handleQRScan(text: string) {
+    if (!active) return;
     let sampleId: string | null = null;
     try {
       // Try to parse as URL and extract sample_id param

@@ -19,6 +19,7 @@
 
   // QR scan handler
   function handleQRScan(text: string) {
+    if (!active) return;
     try {
       const url = new URL(text);
       // Only open if same host

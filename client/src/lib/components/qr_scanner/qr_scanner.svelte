@@ -134,7 +134,7 @@
     if (allowCamera) {
       // Persist camera state in localStorage
       localStorage.setItem("qrScannerCameraOn", "true");
-      if (!qrScanner) startScanner();
+      if (!qrScanner && autoStart) startScanner();
     } else {
       // Persist camera state in localStorage
       localStorage.setItem("qrScannerCameraOn", "false");
