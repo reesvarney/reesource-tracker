@@ -27,14 +27,6 @@
     UpdateAppStore();
   });
 
-  $effect(() => {
-    if (currentPage !== "sample_edit") {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("sample");
-      window.history.replaceState({}, "", url.toString());
-    }
-  });
-
   let bulk_apply_active = $derived(currentPage === "bulk_apply");
   let find_sample_active = $derived(currentPage === "find_sample");
   $inspect(bulk_apply_active, find_sample_active);
@@ -96,7 +88,7 @@
             >
             <Tabs.Trigger value="product_edit">Products</Tabs.Trigger>
             <Tabs.Trigger value="location_edit">Locations</Tabs.Trigger>
-            {#if currentPage === "sample_edit"}
+            {#if window.location.search.split("sample_id=").length >= 2}
               <Tabs.Trigger value="sample_edit"
                 >Sample {window.location.search.split(
                   "sample_id="
