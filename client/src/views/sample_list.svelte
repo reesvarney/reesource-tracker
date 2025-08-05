@@ -3,16 +3,22 @@
   import { Button } from "$lib/components/ui/button";
   import ProductSelect from "$lib/components/selects/product-select.svelte";
   import LocationSelect from "$lib/components/selects/location-select.svelte";
+  import StateSelect from "$lib/components/selects/state-select.svelte";
   import { AppStore } from "$lib/components/app_store";
+  import { Checkbox } from "$lib/components/ui/checkbox";
   import * as Pagination from "$lib/components/ui/pagination";
   let selectedProduct = $state("");
   let selectedLocation = $state("");
   let page = $state(1);
   import { onMount, onDestroy } from "svelte";
+  import { Input } from "$lib/components/ui/input";
   let pageSize = $state(1);
   let tableContainer: HTMLDivElement | null = $state(null);
   let firstRow: HTMLElement | null = $state(null);
   let paginationContainer: HTMLDivElement | null = $state(null);
+  let showUnassigned = $state(false);
+  let modQuery = $state("");
+  let selectedState = $state("");
 
   function calculatePageSize() {
     if (!tableContainer) {
@@ -93,6 +99,14 @@
 
   const filteredSamples = $derived(() => {
     let result = $AppStore.samples;
+    if (!showUnassigned) {
+      result = result.filter((sample) => {
+        return sample.state !== "unassigned";
+      });
+    }
+    if (selectedState && selectedState !== "") {
+      result = result.filter((sample) => sample.state === selectedState);
+    }
     if (selectedProduct) {
       if (selectedProduct.startsWith("any-")) {
         const parentId = selectedProduct.slice(4);
@@ -108,6 +122,7 @@
         );
       }
     }
+
     if (selectedLocation) {
       if (selectedLocation.startsWith("any-")) {
         const parentId = selectedLocation.slice(4);
@@ -123,6 +138,19 @@
           (sample) => sample.Location?.id === selectedLocation
         );
       }
+    }
+    if (modQuery != "") {
+      const queries = modQuery
+        .toLowerCase()
+        .split(",")
+        .map((q) => q.trim());
+      result = result.filter((sample) => {
+        if (sample.ModSummary === "No mods") return false;
+        if (sample.ModSummary === "No active mods") return false;
+        return queries.some((query) =>
+          sample.ModSummary.toLowerCase().includes(query)
+        );
+      });
     }
     return result;
   });
@@ -148,14 +176,32 @@
 <div class="max-h-full grow h-full overflow-auto">
   <div class="flex flex-col h-full max-h-full">
     <div
-      class="mb-4 flex flex-wrap items-center gap-6 flex-row w-full"
+      class="mb-4 flex flex-wrap items-center gap-6 flex-row w-full p-4"
       style="min-height:64px"
     >
+      <div>
+        <Input
+          type="text"
+          placeholder="Search by mods"
+          class="input input-bordered w-full max-w-xs"
+          bind:value={modQuery}
+        />
+      </div>
       <div>
         <ProductSelect bind:bindValue={selectedProduct} filterMode={true} />
       </div>
       <div>
         <LocationSelect bind:bindValue={selectedLocation} filterMode={true} />
+      </div>
+      <div>
+        <StateSelect bind:bindValue={selectedState} filterMode={true} />
+      </div>
+      <div class="flex items-center gap-2">
+        <Checkbox id="show-unassigned" bind:checked={showUnassigned} />
+
+        <label class="flex items-center gap-2" for="show-unassigned">
+          Show Unassigned Samples
+        </label>
       </div>
     </div>
     <div

@@ -15,6 +15,14 @@
       label: "Unassigned - This code is not assigned to a sample",
     },
   ];
+  export let filterMode: boolean = false;
+  if (filterMode) {
+    options.unshift({
+      value: "",
+      label: "Any",
+    });
+    options = options.filter((option) => option.value !== "unassigned");
+  }
 </script>
 
 <Select.Root bind:value={bindValue} type="single" {disabled} {required}>
