@@ -237,7 +237,9 @@
               <Table.Row>
                 <Table.Cell>{sample.DisplayId}</Table.Cell>
                 <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
-                <Table.Cell>{sample.ModSummary}</Table.Cell>
+                <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
+                  >{sample.ModSummary}</Table.Cell
+                >
                 <Table.Cell>{sample.Location?.name}</Table.Cell>
                 <Table.Cell>{sample.Status}</Table.Cell>
                 <Table.Cell>

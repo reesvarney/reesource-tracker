@@ -169,7 +169,9 @@
                   ? "font-bold bg-green-50 dark:bg-green-900/20"
                   : ""}
               >
-                <Table.Cell>{mod.name}</Table.Cell>
+                <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
+                  >{mod.name}</Table.Cell
+                >
                 <Table.Cell
                   >{mod.time_added?.toLocaleString?.() ?? ""}</Table.Cell
                 >
