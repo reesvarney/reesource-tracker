@@ -6,11 +6,14 @@
   export let id: string = "state-select";
   export let required: boolean = false;
   export let options: { value: string; label: string }[] = [
-    { value: "in_use", label: "In Use" },
-    { value: "available", label: "Available" },
-    { value: "destroyed", label: "Destroyed" },
-    { value: "broken", label: "Broken" },
-    { value: "unassigned", label: "Unassigned" },
+    { value: "in_use", label: "In Use - Sample is actively being used" },
+    { value: "available", label: "Available - Sample is available for use" },
+    { value: "destroyed", label: "Destroyed - Sample no longer exists" },
+    { value: "broken", label: "Broken - Sample does not function as required" },
+    {
+      value: "unassigned",
+      label: "Unassigned - This code is not assigned to a sample",
+    },
   ];
 </script>
 
