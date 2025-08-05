@@ -9,7 +9,7 @@
   import LocationSelect from "$lib/components/selects/location-select.svelte";
   import ProductSelect from "$lib/components/selects/product-select.svelte";
   import { toast } from "svelte-sonner";
-  let numSamples = $state(10);
+  let numSamples = $state(1);
   let generating = $state(false);
   let error = $state("");
   let printouts: { timestamp: number; ids: string[] }[] = $state([]);
@@ -188,8 +188,8 @@
         <CircleAlertIcon class="size-4" />
         <Alert.Title>Warning</Alert.Title>
         <Alert.Description
-          >Be careful to not reprint any existing code sheets, as this would result in
-          samples sharing the same entries.</Alert.Description
+          >Be careful to not reprint any existing code sheets, as this would
+          result in samples sharing the same entries.</Alert.Description
         >
       </Alert.Root>
     </Card.Header>
@@ -248,20 +248,27 @@
             />
           </label>
           <div>
-            QR Padding (mm):
-            <Input type="number" min="0" max="10" bind:value={qrPadding} />
-          </div>
-          <div>
-            QR Size (mm):
-            <Input type="number" min="5" max="50" bind:value={qrSize} />
-          </div>
-          <div>
             <Button type="submit" disabled={generating}>
               {generating ? "Generating..." : "Generate"}
             </Button>
           </div>
         </div>
       </form>
+    </Card.Content>
+  </Card.Root>
+  <Card.Root>
+    <Card.Header>
+      <Card.Title>QR Code Settings</Card.Title>
+    </Card.Header>
+    <Card.Content>
+      <div>
+        QR Padding (mm):
+        <Input type="number" min="0" max="10" bind:value={qrPadding} />
+      </div>
+      <div>
+        QR Size (mm):
+        <Input type="number" min="5" max="50" bind:value={qrSize} />
+      </div>
     </Card.Content>
   </Card.Root>
   {#if currentSheet.length}
