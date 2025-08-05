@@ -71,6 +71,11 @@
   }
 
   async function deleteLocation(location: SampleLocation) {
+    // If the location has children, we cannot delete it
+    if (location.ChildLocations.length > 0) {
+      toast.error("Cannot delete location with child locations.");
+      return;
+    }
     await fetch(`/api/location/${location.id}`, { method: "DELETE" });
   }
 </script>

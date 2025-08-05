@@ -47,3 +47,5 @@ CREATE TABLE
         contents TEXT NOT NULL,
         time_made DATETIME NOT NULL
     );
+
+PRAGMA foreign_keys = ON;

@@ -67,6 +67,11 @@
   }
 
   async function deleteProduct(product: SampleProduct) {
+    // If the product has children, we cannot delete it
+    if (product.ChildProducts.length > 0) {
+      toast.error("Cannot delete product with child products.");
+      return;
+    }
     await fetch(`/api/product/${product.id}`, { method: "DELETE" });
   }
 </script>
