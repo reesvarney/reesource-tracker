@@ -188,8 +188,8 @@
         <CircleAlertIcon class="size-4" />
         <Alert.Title>Warning</Alert.Title>
         <Alert.Description
-          >Be careful to not reprint any existing codes, as this would result in
-          2 samples sharing the same entry.</Alert.Description
+          >Be careful to not reprint any existing code sheets, as this would result in
+          samples sharing the same entries.</Alert.Description
         >
       </Alert.Root>
     </Card.Header>
