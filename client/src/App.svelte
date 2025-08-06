@@ -32,7 +32,9 @@
   $inspect(bulk_apply_active, find_sample_active);
 </script>
 
-<Toaster />
+<div class="toaster-wrapper">
+  <Toaster />
+</div>
 
 <main class="w-full overflow-hidden p-6 flex flex-col justify-stretch">
   <Card.Root class="grow max-h-full overflow-y-auto pb-4">
@@ -135,6 +137,12 @@
       max-height: 100vh;
       overflow: hidden;
       height: 100vh;
+    }
+  }
+
+  @media print {
+    .toaster-wrapper {
+      display: none;
     }
   }
 </style>

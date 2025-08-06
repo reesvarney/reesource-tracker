@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: "inconsolata"; /*a name to be used later*/
+  src: url("./assets/fonts/inconsolata.ttf"); /*URL to font*/
+  font-weight: 100 1000;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

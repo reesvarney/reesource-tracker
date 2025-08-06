@@ -6,20 +6,17 @@
   import * as Card from "$lib/components/ui/card";
   import * as Alert from "$lib/components/ui/alert";
   import { CircleAlertIcon } from "lucide-svelte";
-  import LocationSelect from "$lib/components/selects/location-select.svelte";
-  import ProductSelect from "$lib/components/selects/product-select.svelte";
   import { toast } from "svelte-sonner";
   let numSamples = $state(1);
   let generating = $state(false);
   let error = $state("");
   let printouts: { timestamp: number; ids: string[] }[] = $state([]);
   let currentSheet: string[] = $state([]);
-  let showHistory = $state(false);
   let showPrintOverlay = $state(false);
-
+  let fontSize = $state(3); // mm
   // Sizing parameters (modifiable by user)
   let qrPadding = $state(2); // mm, now used as grid gap
-  let qrSize = $state(11); // mm (QR code SVG size)
+  let qrSize = $state(15); // mm (QR code SVG size)
 
   // Derived sizes
   // Use window size in mm if print view is open, otherwise default to A4 size
@@ -207,7 +204,7 @@
               <details>
                 <summary>Show IDs</summary>
                 <div
-                  style="font-family:monospace; font-size:0.95em; word-break: break-all; max-height: 10em; overflow-y: auto;"
+                  style="font-family:inconsolata; font-size:0.95em; word-break: break-all; max-height: 10em; overflow-y: auto;"
                 >
                   {p.ids.join(", ")}
                 </div>
@@ -269,6 +266,10 @@
         QR Size (mm):
         <Input type="number" min="5" max="50" bind:value={qrSize} />
       </div>
+      <div>
+        Font Size (mm):
+        <Input type="number" min="1" max="4" step="0.1" bind:value={fontSize} />
+      </div>
     </Card.Content>
   </Card.Root>
   {#if currentSheet.length}
@@ -285,7 +286,9 @@
             <div class="qr-item">
               {#if previewSheet[i]}
                 <QrCode value={GetSampleUrl(previewSheet[i])} />
-                <div class="qr-id">{previewSheet[i]}</div>
+                <div class="qr-id" style="font-size: {fontSize}mm;">
+                  {previewSheet[i]}
+                </div>
               {/if}
             </div>
           {/each}
@@ -310,7 +313,7 @@
       {#each currentSheet as id}
         <div class="qr-item">
           <QrCode value={GetSampleUrl(id)} />
-          <div class="qr-id">{id}</div>
+          <div class="qr-id" style="font-size: {fontSize}mm;">{id}</div>
         </div>
       {/each}
     </div>
@@ -345,9 +348,6 @@
     align-items: flex-start;
     background: white;
     place-items: start;
-    * {
-      font-size: 2.2mm;
-    }
   }
   .qr-item {
     width: 100%;
@@ -374,7 +374,8 @@
       display: block;
     }
     .qr-id {
-      font-family: monospace;
+      font-family: "inconsolata", monospace;
+      font-weight: 1000;
       width: 100%;
       overflow: hidden;
       text-align: center;
