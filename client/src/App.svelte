@@ -15,13 +15,17 @@
   import { Toaster } from "$lib/components/ui/sonner/index.js";
 
   let currentPage = $state("quick_actions");
-  onMount(() => {
+  onMount(async () => {
     if (window.location.search.includes("sample")) {
       currentPage = "sample_edit";
     } else if (window.location.search.includes("product")) {
       currentPage = "product_edit";
     } else {
-      currentPage = "quick_actions";
+      if (window.outerWidth * 1.5 < window.outerHeight) {
+        currentPage = "quick_actions";
+      } else {
+        currentPage = "sample_list";
+      }
     }
 
     UpdateAppStore();
