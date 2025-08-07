@@ -16,23 +16,29 @@
     },
   ];
   export let filterMode: boolean = false;
+  export let showUnassigned: boolean = true;
   if (filterMode) {
     options.unshift({
       value: "",
       label: "Any",
     });
-    options = options.filter((option) => option.value !== "unassigned");
+  }
+  let filteredOptions = options;
+  $: if (!showUnassigned) {
+    filteredOptions = options.filter((option) => option.value !== "unassigned");
+  } else {
+    filteredOptions = options;
   }
 </script>
 
 <Select.Root bind:value={bindValue} type="single" {disabled} {required}>
   <Select.Trigger {id} class="w-full">
     {bindValue
-      ? options.find((o) => o.value === bindValue)?.label
+      ? filteredOptions.find((o) => o.value === bindValue)?.label
       : placeholder}
   </Select.Trigger>
   <Select.Content class="w-full">
-    {#each options as option}
+    {#each filteredOptions as option}
       <Select.Item value={option.value}>{option.label}</Select.Item>
     {/each}
   </Select.Content>

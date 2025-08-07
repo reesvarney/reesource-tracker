@@ -215,10 +215,14 @@
           <div>
             <Label class=" mb-2" for="state-select">State</Label>
             <div class="flex items-center self-end gap-2">
-              <StateSelect bind:bindValue={selectedState} filterMode={true} />
+              <StateSelect
+                bind:bindValue={selectedState}
+                filterMode={true}
+                bind:showUnassigned
+              />
               <Checkbox id="show-unassigned" bind:checked={showUnassigned} />
               <Label for="show-unassigned" class="no-wrap min-w-max">
-                Show Unassigned Samples
+                Include Unassigned Samples
               </Label>
             </div>
           </div>
