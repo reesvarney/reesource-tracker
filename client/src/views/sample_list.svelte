@@ -102,7 +102,7 @@
 
   const filteredSamples = $derived(() => {
     let result = $AppStore.samples;
-    if (!showUnassigned) {
+    if (!showUnassigned && selectedState !== "unassigned") {
       result = result.filter((sample) => {
         return sample.state !== "unassigned";
       });
@@ -179,13 +179,18 @@
     window.location.href = `/app?sample_id=${sampleId}`;
   }
 
-  let cannotShowUnassigned = $derived(
-    !(selectedState === "unassigned" || selectedState === "")
+  let cannotShowUnassigned = $derived(!(selectedState === ""));
+
+  let canShowUnassigned = $derived(
+    selectedState === "unassigned" || selectedState === ""
   );
 
   $effect(() => {
-    if (cannotShowUnassigned) {
+    if (cannotShowUnassigned && selectedState !== "unassigned") {
       showUnassigned = false; // Force to false if state is not unassigned
+    }
+    if (selectedState === "unassigned") {
+      showUnassigned = true; // Allow showing unassigned samples
     }
   });
 </script>
@@ -228,7 +233,7 @@
               <StateSelect
                 bind:bindValue={selectedState}
                 filterMode={true}
-                bind:showUnassigned
+                showUnassigned={true}
               />
               <Checkbox
                 id="show-unassigned"
