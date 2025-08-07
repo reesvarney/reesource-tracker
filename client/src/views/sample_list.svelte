@@ -178,6 +178,10 @@
   function EditSample(sampleId: string) {
     window.location.href = `/app?sample_id=${sampleId}`;
   }
+
+  let cannotShowUnassigned = $derived(
+    !(selectedState === "unassigned" || selectedState === "")
+  );
 </script>
 
 <div class="max-h-full grow h-full overflow-auto">
@@ -220,7 +224,11 @@
                 filterMode={true}
                 bind:showUnassigned
               />
-              <Checkbox id="show-unassigned" bind:checked={showUnassigned} />
+              <Checkbox
+                id="show-unassigned"
+                bind:checked={showUnassigned}
+                disabled={cannotShowUnassigned}
+              />
               <Label for="show-unassigned" class="no-wrap min-w-max">
                 Include Unassigned Samples
               </Label>
