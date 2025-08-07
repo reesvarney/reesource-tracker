@@ -7,11 +7,14 @@
   import { AppStore } from "$lib/components/app_store";
   import { Checkbox } from "$lib/components/ui/checkbox";
   import * as Pagination from "$lib/components/ui/pagination";
+  import * as Card from "$lib/components/ui/card";
+  import { Separator } from "$lib/components/ui/separator";
   let selectedProduct = $state("");
   let selectedLocation = $state("");
   let page = $state(1);
   import { onMount, onDestroy } from "svelte";
   import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
   let pageSize = $state(1);
   let tableContainer: HTMLDivElement | null = $state(null);
   let firstRow: HTMLElement | null = $state(null);
@@ -163,9 +166,13 @@
   );
 
   $effect(() => {
-    if (selectedLocation || selectedProduct) {
-      page = 1; // Reset to first page when filters change
-    }
+    selectedLocation ||
+      selectedProduct ||
+      modQuery ||
+      selectedState ||
+      showUnassigned;
+
+    page = 1; // Reset to first page when filters change
   });
 
   function EditSample(sampleId: string) {
@@ -175,120 +182,147 @@
 
 <div class="max-h-full grow h-full overflow-auto">
   <div class="flex flex-col h-full max-h-full">
-    <div
-      class="mb-4 flex flex-wrap items-center gap-6 flex-row w-full p-4"
-      style="min-height:64px"
-    >
-      <div>
-        <Input
-          type="text"
-          placeholder="Search by mods"
-          class="input input-bordered w-full max-w-xs"
-          bind:value={modQuery}
-        />
-      </div>
-      <div>
-        <ProductSelect bind:bindValue={selectedProduct} filterMode={true} />
-      </div>
-      <div>
-        <LocationSelect bind:bindValue={selectedLocation} filterMode={true} />
-      </div>
-      <div>
-        <StateSelect bind:bindValue={selectedState} filterMode={true} />
-      </div>
-      <div class="flex items-center gap-2">
-        <Checkbox id="show-unassigned" bind:checked={showUnassigned} />
+    <Card.Root class="grow">
+      <Card.Header>
+        <Card.Title>Sample List</Card.Title>
+        <Card.Description>
+          Find and manage samples in the system.
+        </Card.Description>
+        <div class=" flex flex-wrap items-start gap-12 flex-row w-full">
+          <div>
+            <Label class=" mb-2" for="mod-query">Mods</Label>
+            <Input
+              type="text"
+              placeholder="Search by mods"
+              class="input input-bordered w-full max-w-xs"
+              bind:value={modQuery}
+            />
+          </div>
 
-        <label class="flex items-center gap-2" for="show-unassigned">
-          Show Unassigned Samples
-        </label>
-      </div>
-    </div>
-    <div
-      bind:this={tableContainer}
-      class="grow basis-0 max-h-full h-full overflow-hidden"
-    >
-      <Table.Root>
-        <Table.Header>
-          <Table.Row>
-            <Table.Head>ID</Table.Head>
-            <Table.Head>Product</Table.Head>
-            <Table.Head>Mods</Table.Head>
-            <Table.Head>Location</Table.Head>
-            <Table.Head>Status</Table.Head>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {#each paginatedSamples() as sample, i}
-            {#if i === 0}
-              <Table.Row bind:ref={firstRow}>
-                <Table.Cell>{sample.DisplayId}</Table.Cell>
-                <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
-                <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
-                  >{sample.ModSummary}</Table.Cell
-                >
-                <Table.Cell>{sample.Location?.name}</Table.Cell>
-                <Table.Cell>{sample.Status}</Table.Cell>
-                <Table.Cell>
-                  <Button onclick={() => EditSample(sample.DisplayId)}
-                    >Edit</Button
-                  >
-                </Table.Cell>
-              </Table.Row>
-            {:else}
+          <div>
+            <Label class=" mb-2" for="product-select">Product</Label>
+            <ProductSelect bind:bindValue={selectedProduct} filterMode={true} />
+          </div>
+
+          <div>
+            <Label class=" mb-2" for="location-select">Location</Label>
+            <LocationSelect
+              bind:bindValue={selectedLocation}
+              filterMode={true}
+            />
+          </div>
+
+          <div>
+            <Label class=" mb-2" for="state-select">State</Label>
+            <div class="flex items-center self-end gap-2">
+              <StateSelect bind:bindValue={selectedState} filterMode={true} />
+              <Checkbox id="show-unassigned" bind:checked={showUnassigned} />
+              <Label for="show-unassigned" class="no-wrap min-w-max">
+                Show Unassigned Samples
+              </Label>
+            </div>
+          </div>
+
+          <div class="self-end align-self-end grow flex flex-row justify-end">
+            <Button
+              variant="outline"
+              onclick={() => {
+                $AppStore.currentPage = "find_sample";
+                $AppStore = $AppStore;
+              }}>Find Sample by ID or QR Code</Button
+            >
+          </div>
+        </div>
+      </Card.Header>
+      <Separator />
+      <Card.Content class="h-full flex flex-col">
+        <div
+          bind:this={tableContainer}
+          class="grow basis-0 max-h-full h-full overflow-hidden"
+        >
+          <Table.Root>
+            <Table.Header>
               <Table.Row>
-                <Table.Cell>{sample.DisplayId}</Table.Cell>
-                <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
-                <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
-                  >{sample.ModSummary}</Table.Cell
-                >
-                <Table.Cell>{sample.Location?.name}</Table.Cell>
-                <Table.Cell>{sample.Status}</Table.Cell>
-                <Table.Cell>
-                  <Button onclick={() => EditSample(sample.DisplayId)}
-                    >Edit</Button
-                  >
-                </Table.Cell>
+                <Table.Head>ID</Table.Head>
+                <Table.Head>Product</Table.Head>
+                <Table.Head>Mods</Table.Head>
+                <Table.Head>Location</Table.Head>
+                <Table.Head>Status</Table.Head>
               </Table.Row>
-            {/if}
-          {/each}
-        </Table.Body>
-      </Table.Root>
-    </div>
-    <!-- Pagination Controls -->
-    <div class="flex justify-center mt-6" bind:this={paginationContainer}>
-      <Pagination.Root
-        count={filteredSamples().length}
-        perPage={pageSize}
-        bind:page
-      >
-        {#snippet children({ pages, currentPage })}
-          <Pagination.Content>
-            <Pagination.Item>
-              <Pagination.PrevButton disabled={page === 1} />
-            </Pagination.Item>
-            {#each pages as pageObj (pageObj.key)}
-              {#if pageObj.type === "ellipsis"}
+            </Table.Header>
+            <Table.Body>
+              {#each paginatedSamples() as sample, i}
+                {#if i === 0}
+                  <Table.Row bind:ref={firstRow}>
+                    <Table.Cell>{sample.DisplayId}</Table.Cell>
+                    <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
+                    <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
+                      >{sample.ModSummary}</Table.Cell
+                    >
+                    <Table.Cell>{sample.Location?.name}</Table.Cell>
+                    <Table.Cell>{sample.Status}</Table.Cell>
+                    <Table.Cell>
+                      <Button onclick={() => EditSample(sample.DisplayId)}
+                        >Edit</Button
+                      >
+                    </Table.Cell>
+                  </Table.Row>
+                {:else}
+                  <Table.Row>
+                    <Table.Cell>{sample.DisplayId}</Table.Cell>
+                    <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
+                    <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
+                      >{sample.ModSummary}</Table.Cell
+                    >
+                    <Table.Cell>{sample.Location?.name}</Table.Cell>
+                    <Table.Cell>{sample.Status}</Table.Cell>
+                    <Table.Cell>
+                      <Button onclick={() => EditSample(sample.DisplayId)}
+                        >Edit</Button
+                      >
+                    </Table.Cell>
+                  </Table.Row>
+                {/if}
+              {/each}
+            </Table.Body>
+          </Table.Root>
+        </div>
+        <!-- Pagination Controls -->
+        <div class="flex justify-center mt-6" bind:this={paginationContainer}>
+          <Pagination.Root
+            count={filteredSamples().length}
+            perPage={pageSize}
+            bind:page
+          >
+            {#snippet children({ pages, currentPage })}
+              <Pagination.Content>
                 <Pagination.Item>
-                  <Pagination.Ellipsis />
+                  <Pagination.PrevButton disabled={page === 1} />
                 </Pagination.Item>
-              {:else}
+                {#each pages as pageObj (pageObj.key)}
+                  {#if pageObj.type === "ellipsis"}
+                    <Pagination.Item>
+                      <Pagination.Ellipsis />
+                    </Pagination.Item>
+                  {:else}
+                    <Pagination.Item>
+                      <Pagination.Link
+                        page={pageObj}
+                        isActive={currentPage === pageObj.value}
+                      >
+                        {pageObj.value}
+                      </Pagination.Link>
+                    </Pagination.Item>
+                  {/if}
+                {/each}
                 <Pagination.Item>
-                  <Pagination.Link
-                    page={pageObj}
-                    isActive={currentPage === pageObj.value}
-                  >
-                    {pageObj.value}
-                  </Pagination.Link>
+                  <Pagination.NextButton disabled={page === totalPages()} />
                 </Pagination.Item>
-              {/if}
-            {/each}
-            <Pagination.Item>
-              <Pagination.NextButton disabled={page === totalPages()} />
-            </Pagination.Item>
-          </Pagination.Content>
-        {/snippet}
-      </Pagination.Root>
-    </div>
+              </Pagination.Content>
+            {/snippet}
+          </Pagination.Root>
+        </div>
+      </Card.Content>
+    </Card.Root>
   </div>
 </div>

@@ -2,7 +2,9 @@
   import { onMount, onDestroy } from "svelte";
   import QrScanner from "qr-scanner";
   import { Switch } from "$lib/components/ui/switch/index.js";
-
+  import { Label } from "$lib/components/ui/label";
+  import * as Select from "$lib/components/ui/select/index.js";
+  let videoContainer: HTMLDivElement | null = $state(null);
   let videoInputs: MediaDeviceInfo[] = $state([]);
   let {
     selectedVideoInput = $bindable(""),
@@ -20,15 +22,17 @@
 
   async function startScanner() {
     if (videoElement) return;
-    const qrContainer = document.getElementById(containerId);
-    if (!qrContainer) return;
-    qrContainer.innerHTML = "";
+    if (!videoContainer) return;
+    videoContainer.innerHTML = "";
     videoElement = document.createElement("video");
-    videoElement.className = "max-h-[20vh]";
     videoElement.setAttribute("autoplay", "true");
     videoElement.setAttribute("playsinline", "true");
-    videoElement.style.width = "100%";
-
+    videoElement.classList.add(
+      "max-h-full",
+      "max-w-full",
+      "rounded-lg",
+      "shadow"
+    );
     // Flip preview if front-facing camera is selected
     if (flipFrontCamera && videoInputs && selectedVideoInput) {
       const selectedDevice = videoInputs.find(
@@ -44,7 +48,7 @@
       }
     }
 
-    qrContainer.appendChild(videoElement);
+    videoContainer.appendChild(videoElement);
 
     // Stop any previous scanner
     if (qrScanner) {
@@ -89,8 +93,7 @@
       videoElement.srcObject = null;
     }
     videoElement = null;
-    const qrContainer = document.getElementById(containerId);
-    if (qrContainer) qrContainer.innerHTML = "";
+    if (videoContainer) videoContainer.innerHTML = "";
   }
 
   async function restartScanner() {
@@ -155,33 +158,37 @@
   });
 </script>
 
-<div id={containerId} class="border p-4"></div>
-<p class="text-sm text-gray-500 mt-6">
-  QR Codes are scanned and processed locally on your device. No data is sent to
-  the server.
-</p>
-<div class="mt-2 flex items-center gap-2">
-  <label class="block font-bold" for="camera-select">Camera</label>
-  {#if videoInputError}
-    <div class="text-destructive">{videoInputError}</div>
-  {:else}
-    <select
-      id="camera-select"
-      bind:value={selectedVideoInput}
-      class="border rounded px-2 py-1"
-    >
-      {#each videoInputs as device}
-        <option value={device.deviceId}>
-          {device.label || `Camera ${device.deviceId}`}
-        </option>
-      {/each}
-    </select>
-  {/if}
-  <div class="ml-4 flex items-center gap-2">
-    <Switch bind:checked={allowCamera} id="camera-switch"></Switch>
-    <label for="camera-switch" class="select-none cursor-pointer">
-      {allowCamera ? "Camera On" : "Camera Off"}
-    </label>
+<div class="flex flex-col items-center justify-center">
+  <div id={containerId} bind:this={videoContainer} class="h-[20vh]"></div>
+  <p class="text-sm text-gray-500 mt-6">
+    QR Codes are scanned and processed locally on your device. No data is sent
+    to the server.
+  </p>
+  <div class="mt-2 flex items-center gap-2">
+    <Label class="block font-bold" for="camera-select">Camera</Label>
+    {#if videoInputError}
+      <div class="text-destructive">{videoInputError}</div>
+    {:else}
+      <Select.Root type="single" bind:value={selectedVideoInput}>
+        <Select.Trigger class="w-full"
+          >{videoInputs.find((d) => d.deviceId === selectedVideoInput)?.label ||
+            `Camera ${selectedVideoInput}`}</Select.Trigger
+        >
+        <Select.Content>
+          {#each videoInputs as device}
+            <Select.Item value={device.deviceId}>
+              {device.label || `Camera ${device.deviceId}`}
+            </Select.Item>
+          {/each}
+        </Select.Content>
+      </Select.Root>
+    {/if}
+    <div class="ml-4 flex items-center gap-2">
+      <Switch bind:checked={allowCamera} id="camera-switch"></Switch>
+      <Label for="camera-switch" class="select-none cursor-pointer">
+        {allowCamera ? "Camera On" : "Camera Off"}
+      </Label>
+    </div>
   </div>
 </div>
 

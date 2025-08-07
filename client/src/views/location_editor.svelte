@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import * as Select from "$lib/components/ui/select";
   import LocationSelect from "$lib/components/selects/location-select.svelte";
+  import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { AppStore } from "$lib/components/app_store";
   import {
@@ -80,80 +80,96 @@
   }
 </script>
 
-<Table class="w-full">
-  <TableHeader>
-    <TableRow>
-      <TableHead>Name</TableHead>
-      <TableHead>Description</TableHead>
-      <TableHead>Parent Location</TableHead>
-      <TableHead>Delete</TableHead>
-    </TableRow>
-  </TableHeader>
-  <TableBody>
-    {#each $AppStore.locations as location, i (location.id || i)}
-      <TableRow>
-        <TableCell>
-          <Input
-            class="input input-bordered w-full"
-            bind:value={location.name}
-            oninput={(e: Event) => {
-              const target = e.target as HTMLInputElement;
-              location.name = target.value;
-              debounceUpdate(location);
-            }}
-            placeholder="Location Name"
-          />
-        </TableCell>
-        <TableCell>
-          <Input
-            class="input input-bordered w-full"
-            bind:value={location.description}
-            onchange={(e: Event) => {
-              const target = e.target as HTMLInputElement;
-              location.description = target.value;
-              debounceUpdate(location);
-            }}
-            placeholder="Description"
-          />
-        </TableCell>
-        <TableCell>
-          <LocationSelect
-            bind:bindValue={parent_location_id[location.id]}
-            onValueChange={(v) => {
-              parent_location_id[location.id] = v;
-              parent_location_id = parent_location_id;
-              debounceUpdate(location);
-            }}
-            placeholder="None"
-            id={`parent-location-${location.id}`}
-            disabled={false}
-            required={false}
-            filterOutIds={[
-              location.id,
-              ...location.ChildLocations.map((child) => child.id),
-            ]}
-            options={$AppStore.locations
-              .filter(
-                (l) =>
-                  l.id !== location.id &&
-                  !location.ChildLocations.some((child) => child.id === l.id)
-              )
-              .map((l) => ({ value: l.id, label: l.name }))}
-          />
-        </TableCell>
-        <TableCell>
-          <Button
-            type="button"
-            variant="destructive"
-            onclick={() => deleteLocation(location)}
-          >
-            Delete
-          </Button>
-        </TableCell>
-      </TableRow>
-    {/each}
-  </TableBody>
-</Table>
-<div class="mt-4 w-full flex flex-row justify-end">
-  <Button type="button" onclick={addLocationRow}>Add Location</Button>
-</div>
+<Card.Root class="h-full max-h-full overflow-hidden max-h-[calc(100vh-6rem)]">
+  <Card.Header>
+    <Card.Title>Location Editor</Card.Title>
+    <Card.Description>
+      Edit locations and their hierarchy. Changes are saved automatically.
+    </Card.Description>
+  </Card.Header>
+  <Card.Content class="flex flex-col h-full overflow-hidden">
+    <div class="flex-1 min-h-0 flex-basis-0 flex-shrink min-h-0">
+      <div class="w-full h-full max-h-full overflow-y-auto">
+        <Table class="w-full">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Parent Location</TableHead>
+              <TableHead>Delete</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {#each $AppStore.locations as location, i (location.id || i)}
+              <TableRow>
+                <TableCell>
+                  <Input
+                    class="input input-bordered w-full"
+                    bind:value={location.name}
+                    oninput={(e: Event) => {
+                      const target = e.target as HTMLInputElement;
+                      location.name = target.value;
+                      debounceUpdate(location);
+                    }}
+                    placeholder="Location Name"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    class="input input-bordered w-full"
+                    bind:value={location.description}
+                    onchange={(e: Event) => {
+                      const target = e.target as HTMLInputElement;
+                      location.description = target.value;
+                      debounceUpdate(location);
+                    }}
+                    placeholder="Description"
+                  />
+                </TableCell>
+                <TableCell>
+                  <LocationSelect
+                    bind:bindValue={parent_location_id[location.id]}
+                    onValueChange={(v) => {
+                      parent_location_id[location.id] = v;
+                      parent_location_id = parent_location_id;
+                      debounceUpdate(location);
+                    }}
+                    placeholder="None"
+                    id={`parent-location-${location.id}`}
+                    disabled={false}
+                    required={false}
+                    filterOutIds={[
+                      location.id,
+                      ...location.ChildLocations.map((child) => child.id),
+                    ]}
+                    options={$AppStore.locations
+                      .filter(
+                        (l) =>
+                          l.id !== location.id &&
+                          !location.ChildLocations.some(
+                            (child) => child.id === l.id
+                          )
+                      )
+                      .map((l) => ({ value: l.id, label: l.name }))}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onclick={() => deleteLocation(location)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            {/each}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+    <div class="mt-4 w-full flex flex-row justify-end flex-shrink-0">
+      <Button type="button" onclick={addLocationRow}>Add Location</Button>
+    </div>
+  </Card.Content>
+</Card.Root>

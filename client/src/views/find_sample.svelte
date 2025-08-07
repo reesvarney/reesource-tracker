@@ -3,9 +3,9 @@
   import * as InputOTP from "$lib/components/ui/input-otp";
   import { toast } from "svelte-sonner";
   let { active = $bindable(false) } = $props();
-
+  import { Label } from "$lib/components/ui/label";
+  import * as Card from "$lib/components/ui/card";
   let selectedVideoInput: string = $state("");
-  let rootEl: HTMLElement | null = null;
   let new_sample: string = $state("");
 
   $effect(() => {
@@ -36,40 +36,48 @@
   // No need to enumerate video inputs here; handled by QRScanner
 </script>
 
-<div class="space-y-4 flex flex-col" bind:this={rootEl}>
-  <div class="flex flex-col items-center">
-    <label for="qr-reader-find" class="mb-6">Scan a QR code</label>
-    <QRScanner
-      containerId="qr-reader-find"
-      bind:selectedVideoInput
-      onQrCodeScan={handleQRScan}
-      autoStart={active}
-    />
-  </div>
-  <div class="self-center mt-12 flex flex-col items-center gap-6">
-    <label for="id-input">Or manually enter the sample ID</label>
-    <InputOTP.Root maxlength={6} bind:value={new_sample} id="id-input">
-      {#snippet children({ cells })}
-        <InputOTP.Group>
-          {#each cells.slice(0, 2) as cell}
-            <InputOTP.Slot {cell} />
-          {/each}
-        </InputOTP.Group>
-        <InputOTP.Separator />
-        <InputOTP.Group>
-          {#each cells.slice(2, 4) as cell}
-            <InputOTP.Slot {cell} />
-          {/each}
-        </InputOTP.Group>
-        <InputOTP.Separator />
-        <InputOTP.Group>
-          {#each cells.slice(4, 6) as cell}
-            <InputOTP.Slot {cell} />
-          {/each}
-        </InputOTP.Group>
-      {/snippet}
-    </InputOTP.Root>
-  </div>
+<div class="space-y-4 flex flex-col">
+  <Card.Root>
+    <Card.Header>
+      <Card.Title>Find Sample</Card.Title>
+      <Card.Description>
+        Scan a QR code or manually enter the sample ID to go to the sample's
+        details page.
+      </Card.Description>
+    </Card.Header>
+    <Card.Content>
+      <QRScanner
+        containerId="qr-reader-find"
+        bind:selectedVideoInput
+        onQrCodeScan={handleQRScan}
+        autoStart={active}
+      />
+      <div class="self-center mt-12 flex flex-col items-center gap-6">
+        <Label for="id-input">Or manually enter the sample ID</Label>
+        <InputOTP.Root maxlength={6} bind:value={new_sample} id="id-input">
+          {#snippet children({ cells })}
+            <InputOTP.Group>
+              {#each cells.slice(0, 2) as cell}
+                <InputOTP.Slot {cell} />
+              {/each}
+            </InputOTP.Group>
+            <InputOTP.Separator />
+            <InputOTP.Group>
+              {#each cells.slice(2, 4) as cell}
+                <InputOTP.Slot {cell} />
+              {/each}
+            </InputOTP.Group>
+            <InputOTP.Separator />
+            <InputOTP.Group>
+              {#each cells.slice(4, 6) as cell}
+                <InputOTP.Slot {cell} />
+              {/each}
+            </InputOTP.Group>
+          {/snippet}
+        </InputOTP.Root>
+      </div>
+    </Card.Content>
+  </Card.Root>
 </div>
 
 <style>

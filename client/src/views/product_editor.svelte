@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import ProductSelect from "$lib/components/selects/product-select.svelte";
+  import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { SampleProduct } from "$lib/components/product";
   import { AppStore } from "$lib/components/app_store";
@@ -76,67 +77,83 @@
   }
 </script>
 
-<Table class="w-full">
-  <TableHeader>
-    <TableRow>
-      <TableHead>Name</TableHead>
-      <TableHead>Parent Product</TableHead>
-      <TableHead>Delete</TableHead>
-    </TableRow>
-  </TableHeader>
-  <TableBody>
-    {#each $AppStore.products as product, i (product.id || i)}
-      <TableRow>
-        <TableCell>
-          <Input
-            class="input input-bordered w-full"
-            bind:value={product.name}
-            oninput={(e: Event) => {
-              const target = e.target as HTMLInputElement;
-              product.name = target.value;
-              debounceUpdate(product);
-            }}
-            placeholder="Product Name"
-          />
-        </TableCell>
-        <TableCell>
-          <ProductSelect
-            bind:bindValue={parent_product_id[product.id]}
-            onValueChange={(v) => {
-              parent_product_id[product.id] = v;
-              parent_product_id = parent_product_id;
-              debounceUpdate(product);
-            }}
-            placeholder="None"
-            id={`parent-product-${product.id}`}
-            disabled={false}
-            required={false}
-            filterOutIds={[
-              product.id,
-              ...product.ChildProducts.map((child) => child.id),
-            ]}
-            options={$AppStore.products
-              .filter(
-                (p) =>
-                  p.id !== product.id &&
-                  !product.ChildProducts.some((child) => child.id === p.id)
-              )
-              .map((p) => ({ value: p.id, label: p.name }))}
-          />
-        </TableCell>
-        <TableCell>
-          <Button
-            type="button"
-            variant="destructive"
-            onclick={() => deleteProduct(product)}
-          >
-            Delete
-          </Button>
-        </TableCell>
-      </TableRow>
-    {/each}
-  </TableBody>
-</Table>
-<div class="mt-4 w-full flex flex-row justify-end">
-  <Button type="button" onclick={addProductRow}>Add Product</Button>
-</div>
+<Card.Root class="h-full max-h-full overflow-y-auto max-h-[calc(100vh-6rem)]">
+  <Card.Header>
+    <Card.Title>Product Editor</Card.Title>
+    <Card.Description>
+      Edit products and their hierarchy. Changes are saved automatically.
+    </Card.Description>
+  </Card.Header>
+  <Card.Content class="flex flex-col h-full overflow-hidden">
+    <div class="flex-1 min-h-0 flex-basis-0 flex-shrink min-h-0">
+      <div class="w-full h-full max-h-full overflow-y-auto">
+        <Table class="w-full flex-grow">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Parent Product</TableHead>
+              <TableHead>Delete</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {#each $AppStore.products as product, i (product.id || i)}
+              <TableRow>
+                <TableCell>
+                  <Input
+                    class="input input-bordered w-full"
+                    bind:value={product.name}
+                    oninput={(e: Event) => {
+                      const target = e.target as HTMLInputElement;
+                      product.name = target.value;
+                      debounceUpdate(product);
+                    }}
+                    placeholder="Product Name"
+                  />
+                </TableCell>
+                <TableCell>
+                  <ProductSelect
+                    bind:bindValue={parent_product_id[product.id]}
+                    onValueChange={(v) => {
+                      parent_product_id[product.id] = v;
+                      parent_product_id = parent_product_id;
+                      debounceUpdate(product);
+                    }}
+                    placeholder="None"
+                    id={`parent-product-${product.id}`}
+                    disabled={false}
+                    required={false}
+                    filterOutIds={[
+                      product.id,
+                      ...product.ChildProducts.map((child) => child.id),
+                    ]}
+                    options={$AppStore.products
+                      .filter(
+                        (p) =>
+                          p.id !== product.id &&
+                          !product.ChildProducts.some(
+                            (child) => child.id === p.id
+                          )
+                      )
+                      .map((p) => ({ value: p.id, label: p.name }))}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onclick={() => deleteProduct(product)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            {/each}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+    <div class="mt-4 w-full flex flex-row self-end justify-end">
+      <Button type="button" onclick={addProductRow}>Add Product</Button>
+    </div>
+  </Card.Content>
+</Card.Root>

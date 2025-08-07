@@ -11,6 +11,7 @@
   import * as Table from "$lib/components/ui/table";
   import { Checkbox } from "$lib/components/ui/checkbox/index.js";
   import { toast } from "svelte-sonner";
+  import { Label } from "$lib/components/ui/label";
 
   let sample: Sample = $state(new Sample({}));
   let showFittedOnly = $state(false);
@@ -131,8 +132,8 @@
       <h3 class="font-bold mb-2">Mods</h3>
       <div class="flex flex-wrap gap-2 mb-2 items-center">
         <Checkbox bind:checked={showFittedOnly} id="show-fitted-mods" />
-        <label class="text-sm" for="show-fitted-mods"
-          >Show only fitted mods</label
+        <Label class="text-sm" for="show-fitted-mods"
+          >Show only fitted mods</Label
         >
       </div>
       {#if add_mod_error}

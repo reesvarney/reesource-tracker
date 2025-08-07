@@ -4,13 +4,17 @@
   import ProductSelect from "$lib/components/selects/product-select.svelte";
   import LocationSelect from "$lib/components/selects/location-select.svelte";
   import StateSelect from "$lib/components/selects/state-select.svelte";
+  import { Separator } from "$lib/components/ui/separator";
   import { toast } from "svelte-sonner";
+  import { Label } from "$lib/components/ui/label";
+  import * as Card from "$lib/components/ui/card";
   import * as InputOTP from "$lib/components/ui/input-otp";
   let scannedIds: string[] = $state([]);
   let selectedProduct = $state("");
   let selectedLocation = $state("");
   let sampleState = $state("");
-
+  import { Badge } from "$lib/components/ui/badge/index.js";
+  import { Checkbox } from "$lib/components/ui/checkbox/index.js";
   let { active = $bindable(false) } = $props();
   // QR scan handler
   function handleQRScan(text: string) {
@@ -69,9 +73,9 @@
     }
   });
 
-  let updateProduct = $state(true);
-  let updateLocation = $state(true);
-  let updateState = $state(true);
+  let updateProduct = $state(false);
+  let updateLocation = $state(false);
+  let updateState = $state(false);
   let modNames: string[] = $state([]);
   let modInput = $state("");
   let modError = $state("");
@@ -162,155 +166,221 @@
     scannedIds = [];
     toast("Cleared all scanned sample IDs.");
   }
+
+  function removeScannedId(id: string) {
+    scannedIds = scannedIds.filter((sampleId) => sampleId !== id);
+    toast(`Removed sample ID: ${id}`);
+  }
 </script>
 
-<div class="space-y-4">
-  <div class="flex flex-col items-center shrink">
-    <label for="qr-reader-bulk" class="mb-6">Scan a QR code</label>
-    <QRScanner
-      containerId="qr-reader-bulk"
-      bind:selectedVideoInput
-      onQrCodeScan={handleQRScan}
-      autoStart={active}
-    />
-  </div>
-  <div class="self-center mt-6 flex flex-col items-center gap-6">
-    <label for="manual-id-input">Or manually enter the sample ID</label>
-    <InputOTP.Root
-      maxlength={6}
-      bind:value={manualSample}
-      id="manual-id-input"
-      disabled={modLoading}
-    >
-      {#snippet children({ cells })}
-        <InputOTP.Group>
-          {#each cells.slice(0, 2) as cell}
-            <InputOTP.Slot {cell} />
-          {/each}
-        </InputOTP.Group>
-        <InputOTP.Separator />
-        <InputOTP.Group>
-          {#each cells.slice(2, 4) as cell}
-            <InputOTP.Slot {cell} />
-          {/each}
-        </InputOTP.Group>
-        <InputOTP.Separator />
-        <InputOTP.Group>
-          {#each cells.slice(4, 6) as cell}
-            <InputOTP.Slot {cell} />
-          {/each}
-        </InputOTP.Group>
-      {/snippet}
-    </InputOTP.Root>
-    {#if manualSampleError}
-      <span class="text-red-500 text-sm">{manualSampleError}</span>
-    {/if}
-  </div>
+<div class="flex flex-col gap-8 min-h-full">
+  <div class=" flex flex-row flex-wrap gap-6 justify-stretch items-stretch">
+    <Card.Root class="flex-grow">
+      <Card.Header>
+        <Card.Title>Add Sample</Card.Title>
+        <Card.Description>
+          Scan a QR code or manually enter a sample ID to add it to the list.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        <QRScanner
+          containerId="qr-reader-bulk"
+          bind:selectedVideoInput
+          onQrCodeScan={handleQRScan}
+          autoStart={active}
+        />
+        <div class="self-center mt-12 flex flex-col items-center gap-6">
+          <Label for="manual-id-input">Or manually enter the sample ID</Label>
+          <InputOTP.Root
+            maxlength={6}
+            bind:value={manualSample}
+            id="manual-id-input"
+            disabled={modLoading}
+          >
+            {#snippet children({ cells })}
+              <InputOTP.Group>
+                {#each cells.slice(0, 2) as cell}
+                  <InputOTP.Slot {cell} />
+                {/each}
+              </InputOTP.Group>
+              <InputOTP.Separator />
+              <InputOTP.Group>
+                {#each cells.slice(2, 4) as cell}
+                  <InputOTP.Slot {cell} />
+                {/each}
+              </InputOTP.Group>
+              <InputOTP.Separator />
+              <InputOTP.Group>
+                {#each cells.slice(4, 6) as cell}
+                  <InputOTP.Slot {cell} />
+                {/each}
+              </InputOTP.Group>
+            {/snippet}
+          </InputOTP.Root>
+          {#if manualSampleError}
+            <span class="text-red-500 text-sm">{manualSampleError}</span>
+          {/if}
+        </div>
+      </Card.Content>
+    </Card.Root>
 
-  <div>
-    <label class="font-bold flex items-center gap-2">
-      <input type="checkbox" bind:checked={updateProduct} />
-      Product
-    </label>
-    <ProductSelect bind:bindValue={selectedProduct} disabled={!updateProduct} />
-  </div>
+    <Card.Root class="flex-grow">
+      <Card.Header>
+        <Card.Title>Sample Updates</Card.Title>
+        <Card.Description>
+          Select fields using the checkboxes, and set values to update for all
+          scanned samples. You can also add mods that will be applied with the
+          changes.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        <div class="flex flex-col gap-4 mb-4 h-full">
+          <div class="flex flex-row gap-2 w-full">
+            <Checkbox
+              bind:checked={updateProduct}
+              id="product-update-enabled"
+            />
+            <div class="flex-grow">
+              <Label
+                class="font-bold flex items-center gap-2 mb-2"
+                for="product-update-enabled"
+                >Update Product
+              </Label>
 
-  <div>
-    <label class="font-bold flex items-center gap-2">
-      <input type="checkbox" bind:checked={updateLocation} />
-      Location
-    </label>
-    <LocationSelect
-      bind:bindValue={selectedLocation}
-      disabled={!updateLocation}
-    />
-  </div>
+              <ProductSelect
+                bind:bindValue={selectedProduct}
+                disabled={!updateProduct}
+              />
+            </div>
+          </div>
 
-  <div>
-    <label class="font-bold flex items-center gap-2">
-      <input type="checkbox" bind:checked={updateState} />
-      State
-    </label>
-    <StateSelect bind:bindValue={sampleState} disabled={!updateState} />
-  </div>
+          <div class="flex flex-row gap-2">
+            <Checkbox
+              bind:checked={updateLocation}
+              id="location-update-enabled"
+            />
+            <div class="flex-grow">
+              <Label
+                class="font-bold flex items-center gap-2 mb-2"
+                for="location-update-enabled"
+                >Update Location
+              </Label>
+              <LocationSelect
+                bind:bindValue={selectedLocation}
+                disabled={!updateLocation}
+              />
+            </div>
+          </div>
 
-  <div class="flex flex-col gap-2">
-    <div class="flex gap-2 items-center">
-      <input
-        type="text"
-        class="border rounded px-2 py-1 flex-1"
-        placeholder="Add mod (optional, applies with changes)"
-        bind:value={modInput}
-        onkeydown={(e) => {
-          if (e.key === "Enter" && modInput.trim()) {
-            e.preventDefault();
-            if (!modNames.includes(modInput.trim())) {
-              modNames = [...modNames, modInput.trim()];
-            }
-            modInput = "";
-          }
-        }}
-        disabled={modLoading}
-      />
-      <Button
-        onclick={() => {
-          if (modInput.trim() && !modNames.includes(modInput.trim())) {
-            modNames = [...modNames, modInput.trim()];
-            modInput = "";
-          }
-        }}
-        disabled={modLoading || !modInput.trim()}>Add</Button
-      >
-      {#if modError}
-        <span class="text-red-500 text-sm">{modError}</span>
-      {/if}
-    </div>
-    {#if modNames.length > 0}
-      <div class="flex flex-wrap gap-2 mb-2">
-        {#each modNames as mod, i}
-          <span class="bg-gray-200 rounded px-2 py-1 flex items-center gap-1">
-            {mod}
-            <button
-              type="button"
-              class="ml-1 text-red-500 hover:text-red-700"
-              onclick={() => {
-                modNames = modNames.filter((_, idx) => idx !== i);
-              }}
-              aria-label="Remove mod">&times;</button
+          <div class="flex flex-row gap-2">
+            <Checkbox bind:checked={updateState} id="state-update-enabled" />
+            <div class="flex-grow">
+              <Label
+                class="font-bold flex items-center gap-2 mb-2"
+                for="state-update-enabled"
+              >
+                Update State
+              </Label>
+              <StateSelect
+                bind:bindValue={sampleState}
+                disabled={!updateState}
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 flex-grow">
+            <div class="flex gap-2 items-center">
+              <input
+                type="text"
+                class="border rounded px-2 py-1 flex-1"
+                placeholder="Add mod (optional, applies with changes)"
+                bind:value={modInput}
+                onkeydown={(e) => {
+                  if (e.key === "Enter" && modInput.trim()) {
+                    e.preventDefault();
+                    if (!modNames.includes(modInput.trim())) {
+                      modNames = [...modNames, modInput.trim()];
+                    }
+                    modInput = "";
+                  }
+                }}
+                disabled={modLoading}
+              />
+              <Button
+                onclick={() => {
+                  if (modInput.trim() && !modNames.includes(modInput.trim())) {
+                    modNames = [...modNames, modInput.trim()];
+                    modInput = "";
+                  }
+                }}
+                disabled={modLoading || !modInput.trim()}>Add</Button
+              >
+              {#if modError}
+                <span class="text-red-500 text-sm">{modError}</span>
+              {/if}
+            </div>
+            {#if modNames.length > 0}
+              <div class="flex flex-wrap gap-2 pb-2 flex-grow">
+                {#each modNames as mod, i}
+                  <Badge variant="outline">
+                    {mod}
+                    <Button
+                      variant="ghost"
+                      class="p-0 min-h-0 h-auto text-red-500 px-2 py-1"
+                      onclick={() => {
+                        modNames = modNames.filter((_, idx) => idx !== i);
+                      }}
+                      aria-label="Remove mod">&times;</Button
+                    >
+                  </Badge>
+                {/each}
+              </div>
+            {/if}
+          </div>
+          <Separator />
+          <Button
+            onclick={applyChanges}
+            disabled={scannedIds.length === 0 || modLoading}
+            >Apply Changes</Button
+          >
+          <Button
+            variant="secondary"
+            onclick={clearScanned}
+            disabled={scannedIds.length === 0 || modLoading}
+            >Clear Scanned</Button
+          >
+        </div>
+      </Card.Content>
+    </Card.Root>
+  </div>
+  <Card.Root class="flex-grow">
+    <Card.Header>
+      <Card.Title>Sample IDs</Card.Title>
+      <Card.Description>
+        List of sample IDs scanned or entered manually.
+      </Card.Description>
+    </Card.Header>
+    <Card.Content>
+      {#if scannedIds.length === 0}
+        <div class="text-muted-foreground">No samples scanned yet.</div>
+      {:else}
+        <div class="flex flex-row flex-wrap gap-2">
+          {#each scannedIds as id}
+            <Badge variant="outline" class="mb-2"
+              >{id}
+              <Button
+                variant="ghost"
+                class="p-0 min-h-0 h-auto text-red-500 px-2 py-1"
+                onclick={() => removeScannedId(id)}
+                aria-label="Remove mod">&times;</Button
+              ></Badge
             >
-          </span>
-        {/each}
-      </div>
-    {/if}
-    <Button
-      onclick={applyChanges}
-      disabled={scannedIds.length === 0 || modLoading}>Apply Changes</Button
-    >
-    <Button
-      variant="secondary"
-      onclick={clearScanned}
-      disabled={scannedIds.length === 0 || modLoading}>Clear Scanned</Button
-    >
-  </div>
-
-  <div class="mt-4">
-    <h2 class="font-bold">Scanned Sample IDs</h2>
-    {#if scannedIds.length === 0}
-      <div class="text-muted-foreground">No samples scanned yet.</div>
-    {:else}
-      <ul class="list-disc ml-6">
-        {#each scannedIds as id}
-          <li>{id}</li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
+          {/each}
+        </div>
+      {/if}
+    </Card.Content>
+  </Card.Root>
 </div>
 
 <style>
-  #qr-reader-bulk {
-    width: 100%;
-    max-width: 400px;
-    margin: auto;
-  }
 </style>

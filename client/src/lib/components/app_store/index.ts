@@ -8,6 +8,7 @@ export type AppData = {
   samples: Sample[];
   locations: SampleLocation[];
   products: SampleProduct[];
+  currentPage: string;
 };
 
 const app_data_cache = localStorage.getItem("app_data_cache");
@@ -15,6 +16,7 @@ let cached_data: AppData = {
   samples: [],
   locations: [],
   products: [],
+  currentPage: "quick_actions",
 };
 
 if (app_data_cache) {

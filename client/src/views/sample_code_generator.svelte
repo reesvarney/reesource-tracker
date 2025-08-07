@@ -7,6 +7,7 @@
   import * as Alert from "$lib/components/ui/alert";
   import { CircleAlertIcon } from "lucide-svelte";
   import { toast } from "svelte-sonner";
+  import { Label } from "$lib/components/ui/label";
   let numSamples = $state(1);
   let generating = $state(false);
   let error = $state("");
@@ -181,9 +182,12 @@
   <Card.Root>
     <Card.Header>
       <Card.Title>Previous Code Sheets</Card.Title>
+      <Card.Description>
+        Select a previously generated code sheet to print or view.
+      </Card.Description>
       <Alert.Root variant="destructive">
         <CircleAlertIcon class="size-4" />
-        <Alert.Title>Warning</Alert.Title>
+        <Alert.Title>Warning - Delete code sheets after printing</Alert.Title>
         <Alert.Description
           >Be careful to not reprint any existing code sheets, as this would
           result in samples sharing the same entries.</Alert.Description
@@ -227,51 +231,66 @@
     </Card.Content>
   </Card.Root>
 
-  <Card.Root>
-    <Card.Header>
-      <Card.Title>Sample Code Generator</Card.Title>
-    </Card.Header>
-    <Card.Content>
-      <form onsubmit={generateSamples}>
-        <div class="flex flex-col gap-4">
-          <label>
-            Number of samples to generate:
-            <Input
-              type="number"
-              min="1"
-              max="1000"
-              bind:value={numSamples}
-              disabled={generating}
-            />
-          </label>
-          <div>
-            <Button type="submit" disabled={generating}>
-              {generating ? "Generating..." : "Generate"}
-            </Button>
+  <div class="flex flex-row gap-6 w-full">
+    <Card.Root class="grow">
+      <Card.Header>
+        <Card.Title>Sample Code Generator</Card.Title>
+        <Card.Description>
+          Reserve a new set of sample codes for printing.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        <form onsubmit={generateSamples}>
+          <div class="flex flex-col gap-4">
+            <Label>
+              Number of samples to generate:
+              <Input
+                type="number"
+                min="1"
+                max="1000"
+                bind:value={numSamples}
+                disabled={generating}
+              />
+            </Label>
+            <div>
+              <Button type="submit" disabled={generating}>
+                {generating ? "Generating..." : "Generate"}
+              </Button>
+            </div>
           </div>
+        </form>
+      </Card.Content>
+    </Card.Root>
+    <Card.Root class="grow">
+      <Card.Header>
+        <Card.Title>QR Code Settings</Card.Title>
+        <Card.Description>
+          Adjust the QR code and font sizes for the generated codes.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        <div>
+          QR Padding (mm):
+          <Input type="number" min="0" max="10" bind:value={qrPadding} />
         </div>
-      </form>
-    </Card.Content>
-  </Card.Root>
-  <Card.Root>
-    <Card.Header>
-      <Card.Title>QR Code Settings</Card.Title>
-    </Card.Header>
-    <Card.Content>
-      <div>
-        QR Padding (mm):
-        <Input type="number" min="0" max="10" bind:value={qrPadding} />
-      </div>
-      <div>
-        QR Size (mm):
-        <Input type="number" min="5" max="50" bind:value={qrSize} />
-      </div>
-      <div>
-        Font Size (mm):
-        <Input type="number" min="1" max="4" step="0.1" bind:value={fontSize} />
-      </div>
-    </Card.Content>
-  </Card.Root>
+        <div>
+          QR Size (mm):
+          <Input type="number" min="5" max="50" bind:value={qrSize} />
+        </div>
+        <div>
+          Font Size (mm):
+          <Input
+            type="number"
+            min="1"
+            max="4"
+            step="0.1"
+            bind:value={fontSize}
+          />
+        </div>
+      </Card.Content>
+    </Card.Root>
+  </div>
+
   {#if currentSheet.length}
     <Card.Root>
       <Card.Header>
