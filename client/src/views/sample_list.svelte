@@ -182,6 +182,12 @@
   let cannotShowUnassigned = $derived(
     !(selectedState === "unassigned" || selectedState === "")
   );
+
+  $effect(() => {
+    if (cannotShowUnassigned) {
+      showUnassigned = false; // Force to false if state is not unassigned
+    }
+  });
 </script>
 
 <div class="max-h-full grow h-full overflow-auto">
