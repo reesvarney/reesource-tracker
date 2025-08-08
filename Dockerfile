@@ -25,5 +25,6 @@ RUN update-ca-certificates
 COPY --from=go_builder /build/build .
 COPY --from=bun_builder /build/build .
 RUN mkdir /app/database
+COPY ./database/migrations /app/database/migrations
 EXPOSE 80
 ENTRYPOINT ["/app/reesource-tracker"]
