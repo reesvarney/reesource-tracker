@@ -21,7 +21,7 @@
   let firstRow: HTMLElement | null = $state(null);
   let paginationContainer: HTMLDivElement | null = $state(null);
 
-  let showUnassigned = $state(false);
+  let showUnassignedOrArchived = $state(false);
   let modQuery = $state("");
   let selectedState = $state("");
   let ownerQuery = $state(""); // Will hold user id
@@ -106,9 +106,13 @@
 
   const filteredSamples = $derived(() => {
     let result = $AppStore.samples;
-    if (!showUnassigned && selectedState !== "unassigned") {
+    if (
+      !showUnassignedOrArchived &&
+      selectedState !== "unassigned" &&
+      selectedState !== "archived"
+    ) {
       result = result.filter((sample) => {
-        return sample.state !== "unassigned";
+        return sample.state !== "unassigned" && sample.state !== "archived";
       });
     }
     if (selectedState && selectedState !== "") {
@@ -183,7 +187,7 @@
       selectedProduct ||
       modQuery ||
       selectedState ||
-      showUnassigned;
+      showUnassignedOrArchived;
 
     page = 1; // Reset to first page when filters change
   });
@@ -249,12 +253,15 @@
               <StateSelect
                 bind:bindValue={selectedState}
                 filterMode={true}
-                showUnassigned={true}
+                showUnassignedOrArchived={true}
               />
               {#if selectedState === ""}
-                <Checkbox id="show-unassigned" bind:checked={showUnassigned} />
+                <Checkbox
+                  id="show-unassigned"
+                  bind:checked={showUnassignedOrArchived}
+                />
                 <Label for="show-unassigned" class="no-wrap min-w-max">
-                  Include Unassigned Samples
+                  Include Unassigned or Archived Samples
                 </Label>
               {/if}
             </div>
