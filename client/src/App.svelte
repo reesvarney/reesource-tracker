@@ -8,9 +8,8 @@
   import { Button } from "$lib/components/ui/button";
   import SampleCodeGenerator from "$views/sample_code_generator.svelte";
   import * as Tabs from "$lib/components/ui/tabs";
-
+  import UserEditor from "$views/user_editor.svelte";
   import { onMount } from "svelte";
-  import * as Card from "$lib/components/ui/card";
   import { UpdateAppStore, AppStore } from "$lib/components/app_store";
   import { Toaster } from "$lib/components/ui/sonner/index.js";
 
@@ -36,7 +35,7 @@
 </script>
 
 <div class="toaster-wrapper">
-  <Toaster />
+  <Toaster position="bottom-center" />
 </div>
 
 <main class="w-full overflow-hidden p-6 flex flex-col justify-stretch">
@@ -97,6 +96,7 @@
           >Provision Sample Codes</Tabs.Trigger
         >
         <Tabs.Trigger value="product_edit">Products</Tabs.Trigger>
+        <Tabs.Trigger value="user_edit">Users</Tabs.Trigger>
         <Tabs.Trigger value="location_edit">Locations</Tabs.Trigger>
         {#if window.location.search.split("sample_id=").length >= 2}
           <Tabs.Trigger value="sample_edit"
@@ -126,6 +126,9 @@
       </Tabs.Content>
       <Tabs.Content value="sample_code_generator">
         <SampleCodeGenerator />
+      </Tabs.Content>
+      <Tabs.Content value="user_edit">
+        <UserEditor />
       </Tabs.Content>
     </Tabs.Root>
   {/if}

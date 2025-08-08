@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+type AppliedTag struct {
+	ID          interface{}
+	SampleID    interface{}
+	TagID       interface{}
+	DateAdded   sql.NullTime
+	DateRemoved sql.NullTime
+}
+
 type Location struct {
 	ID               interface{}
 	Name             string
@@ -20,6 +28,7 @@ type Product struct {
 	ID              interface{}
 	Name            string
 	ParentProductID interface{}
+	PartNumber      sql.NullString
 }
 
 type Sample struct {
@@ -29,6 +38,15 @@ type Sample struct {
 	TimeRegistered sql.NullTime
 	LastUpdate     sql.NullTime
 	State          string
+	OwnerID        interface{}
+	ProductIssue   sql.NullString
+}
+
+type SampleComment struct {
+	ID        interface{}
+	SampleID  interface{}
+	Comment   string
+	CreatedAt sql.NullTime
 }
 
 type SampleMod struct {
@@ -44,4 +62,15 @@ type SampleNote struct {
 	SampleID interface{}
 	Contents string
 	TimeMade time.Time
+}
+
+type Tag struct {
+	ID        interface{}
+	Name      string
+	Removable sql.NullBool
+}
+
+type User struct {
+	ID   interface{}
+	Name string
 }

@@ -1,20 +1,12 @@
 -- name: GetLocation :one
-SELECT
-    id,
-    name,
-    description,
-    parent_location_id
+SELECT *
 FROM
     locations
 WHERE
     id = ?;
 
 -- name: GetLocations :many
-SELECT
-    id,
-    name,
-    description,
-    parent_location_id
+SELECT *
 FROM
     locations
 ORDER BY
@@ -45,9 +37,11 @@ SELECT
                 AND sample_mods.time_removed IS NULL
         ),
         ''
-    ) AS current_mods_summary
+    ) AS current_mods_summary,
+    users.name AS owner_name
 FROM
     samples
+LEFT JOIN users ON samples.owner_id = users.id
 ORDER BY
     time_registered;
 
@@ -100,15 +94,19 @@ INSERT INTO
         product_id,
         time_registered,
         last_update,
-        state
+        state,
+        owner_id,
+        product_issue
     )
 VALUES
-    (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO
+    (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO
 UPDATE
 SET
     location_id = EXCLUDED.location_id,
     product_id = EXCLUDED.product_id,
     last_update = EXCLUDED.last_update,
+    owner_id = EXCLUDED.owner_id,
+    product_issue = EXCLUDED.product_issue,
     state = EXCLUDED.state RETURNING *;
 
 -- name: GetSampleById :one
@@ -121,19 +119,14 @@ WHERE
 
 -- name: ListProducts :many
 SELECT
-    id,
-    name,
-    parent_product_id
+    *
 FROM
     products
 ORDER BY
     name;
 
 -- name: GetProductByID :one
-SELECT
-    id,
-    name,
-    parent_product_id
+SELECT *
 FROM
     products
 WHERE
@@ -141,10 +134,40 @@ WHERE
 
 -- name: UpsertProduct :exec
 INSERT INTO
-    products (id, name, parent_product_id)
+    products (id, name, parent_product_id, part_number)
 VALUES
-    (?, ?, ?) ON CONFLICT (id) DO
+    (?, ?, ?, ?) ON CONFLICT (id) DO
 UPDATE
 SET
     name = EXCLUDED.name,
-    parent_product_id = EXCLUDED.parent_product_id;
+    parent_product_id = EXCLUDED.parent_product_id,
+    part_number = EXCLUDED.part_number;
+
+
+-- name: GetUserByID :one
+SELECT *
+FROM
+    users
+WHERE
+    id = ?;
+
+-- name: GetUsers :many
+SELECT *
+FROM
+    users
+ORDER BY
+    name;
+
+-- name: UpsertUser :exec
+INSERT INTO
+    users (id, name)
+VALUES
+    (?, ?) ON CONFLICT (id) DO
+UPDATE
+SET
+    name = EXCLUDED.name;
+
+-- name: DeleteUserByID :exec
+DELETE FROM users
+WHERE
+    id = ?;

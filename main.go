@@ -17,9 +17,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-//go:embed database/schema.sql
-var db_schema string
-
 func main() {
 	godotenv.Load()
 	_, devmode := os.LookupEnv("DEV")
@@ -48,7 +45,7 @@ func main() {
 		})
 
 	}
-	database.Connect(context.Background(), db_schema)
+	database.Connect(context.Background())
 	api.Routes(r)
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusPermanentRedirect, "/app")

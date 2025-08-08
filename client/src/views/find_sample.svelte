@@ -7,7 +7,10 @@
   import * as Card from "$lib/components/ui/card";
   let selectedVideoInput: string = $state("");
   let new_sample: string = $state("");
-
+  import { Button } from "$lib/components/ui/button";
+  import { AppStore } from "$lib/components/app_store";
+  import * as Alert from "$lib/components/ui/alert";
+  import { Info } from "lucide-svelte";
   $effect(() => {
     if (new_sample.length == 6) {
       window.location.assign(
@@ -36,8 +39,8 @@
   // No need to enumerate video inputs here; handled by QRScanner
 </script>
 
-<div class="space-y-4 flex flex-col">
-  <Card.Root>
+<div class="space-y-4 flex flex-col min-h-full justify-stretch">
+  <Card.Root class="flex-grow">
     <Card.Header>
       <Card.Title>Find Sample</Card.Title>
       <Card.Description>
@@ -75,6 +78,29 @@
             </InputOTP.Group>
           {/snippet}
         </InputOTP.Root>
+
+        <div class="flex flex-col items-center mt-12">
+          <Alert.Root>
+            <Info />
+            <Alert.Title
+              >Want to apply changes to many samples at once?</Alert.Title
+            >
+            <Alert.Description>
+              Try the Bulk Apply feature to apply changes to multiple samples
+              simultaneously.
+              <div class="flex flex-row justify-end w-full">
+                <Button
+                  variant="outline"
+                  class="mt-2"
+                  onclick={() => {
+                    $AppStore.currentPage = "bulk_apply";
+                    $AppStore = $AppStore; // Trigger reactivity
+                  }}>Try Bulk Apply</Button
+                >
+              </div>
+            </Alert.Description>
+          </Alert.Root>
+        </div>
       </div>
     </Card.Content>
   </Card.Root>

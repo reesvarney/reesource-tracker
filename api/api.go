@@ -5,6 +5,7 @@ import (
 	"reesource-tracker/api/products"
 	"reesource-tracker/api/samples"
 	"reesource-tracker/api/sync"
+	"reesource-tracker/api/users"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,4 +16,5 @@ func Routes(route *gin.Engine) {
 	products.Routes(api_routes)
 	locations.Routes(api_routes)
 	sync.Routes(api_routes)
+	users.Routes(api_routes)
 }
