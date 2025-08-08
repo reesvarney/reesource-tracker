@@ -14,14 +14,18 @@
   let page = $state(1);
   import { onMount, onDestroy } from "svelte";
   import { Input } from "$lib/components/ui/input";
+  import UserSelect from "$lib/components/selects/user-select.svelte";
   import { Label } from "$lib/components/ui/label";
   let pageSize = $state(1);
   let tableContainer: HTMLDivElement | null = $state(null);
   let firstRow: HTMLElement | null = $state(null);
   let paginationContainer: HTMLDivElement | null = $state(null);
+
   let showUnassigned = $state(false);
   let modQuery = $state("");
   let selectedState = $state("");
+  let ownerQuery = $state(""); // Will hold user id
+  let issueQuery = $state("");
 
   function calculatePageSize() {
     if (!tableContainer) {
@@ -155,6 +159,15 @@
         );
       });
     }
+    if (ownerQuery && ownerQuery !== "") {
+      result = result.filter((sample) => sample.Owner?.id === ownerQuery);
+    }
+    if (issueQuery.trim() !== "") {
+      const iq = issueQuery.toLowerCase();
+      result = result.filter((sample) =>
+        sample.productIssue?.toLowerCase().includes(iq)
+      );
+    }
     return result;
   });
 
@@ -189,19 +202,33 @@
           Find and manage samples in the system.
         </Card.Description>
         <div class=" flex flex-wrap items-start gap-12 flex-row w-full">
+          <div class="flex flex-row gap-8">
+            <div>
+              <Label class=" mb-2" for="product-select">Product</Label>
+              <ProductSelect
+                bind:bindValue={selectedProduct}
+                filterMode={true}
+              />
+            </div>
+
+            <div>
+              <Label class=" mb-2" for="issue-query">Issue</Label>
+              <Input
+                type="text"
+                placeholder="Filter by issue"
+                class="input input-bordered w-full max-w-xs"
+                bind:value={issueQuery}
+              />
+            </div>
+          </div>
           <div>
             <Label class=" mb-2" for="mod-query">Mods</Label>
             <Input
               type="text"
-              placeholder="Search by mods"
+              placeholder="Filter by mods"
               class="input input-bordered w-full max-w-xs"
               bind:value={modQuery}
             />
-          </div>
-
-          <div>
-            <Label class=" mb-2" for="product-select">Product</Label>
-            <ProductSelect bind:bindValue={selectedProduct} filterMode={true} />
           </div>
 
           <div>
@@ -210,6 +237,10 @@
               bind:bindValue={selectedLocation}
               filterMode={true}
             />
+          </div>
+          <div>
+            <Label class=" mb-2" for="owner-query">Owner</Label>
+            <UserSelect bind:bindValue={ownerQuery} filterMode={true} />
           </div>
 
           <div>
@@ -251,44 +282,38 @@
               <Table.Row>
                 <Table.Head>ID</Table.Head>
                 <Table.Head>Product</Table.Head>
+                <Table.Head>Issue</Table.Head>
                 <Table.Head>Mods</Table.Head>
                 <Table.Head>Location</Table.Head>
+                <Table.Head>Owner</Table.Head>
                 <Table.Head>Status</Table.Head>
               </Table.Row>
             </Table.Header>
             <Table.Body>
               {#each paginatedSamples() as sample, i}
-                {#if i === 0}
-                  <Table.Row bind:ref={firstRow}>
-                    <Table.Cell>{sample.DisplayId}</Table.Cell>
-                    <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
-                    <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
-                      >{sample.ModSummary}</Table.Cell
-                    >
-                    <Table.Cell>{sample.Location?.name}</Table.Cell>
-                    <Table.Cell>{sample.Status}</Table.Cell>
-                    <Table.Cell>
-                      <Button onclick={() => EditSample(sample.DisplayId)}
-                        >Edit</Button
-                      >
-                    </Table.Cell>
-                  </Table.Row>
-                {:else}
-                  <Table.Row>
-                    <Table.Cell>{sample.DisplayId}</Table.Cell>
-                    <Table.Cell>{sample.Product?.CombinedName}</Table.Cell>
-                    <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
-                      >{sample.ModSummary}</Table.Cell
-                    >
-                    <Table.Cell>{sample.Location?.name}</Table.Cell>
-                    <Table.Cell>{sample.Status}</Table.Cell>
-                    <Table.Cell>
-                      <Button onclick={() => EditSample(sample.DisplayId)}
-                        >Edit</Button
-                      >
-                    </Table.Cell>
-                  </Table.Row>
-                {/if}
+                <Table.Row
+                  bind:ref={
+                    () => firstRow, (el) => (i === 0 ? (firstRow = el) : null)
+                  }
+                >
+                  <Table.Cell>{sample.DisplayId}</Table.Cell>
+                  <Table.Cell
+                    >{sample.Product?.CombinedName}
+                    {#if sample.Product?.partNumber}{`(${sample.Product?.partNumber})`}{/if}</Table.Cell
+                  >
+                  <Table.Cell>{sample.productIssue}</Table.Cell>
+                  <Table.Cell class="max-w-32 overflow-hidden text-ellipsis">
+                    {sample.ModSummary}
+                  </Table.Cell>
+                  <Table.Cell>{sample.Location?.name}</Table.Cell>
+                  <Table.Cell>{sample.Owner?.name}</Table.Cell>
+                  <Table.Cell>{sample.Status}</Table.Cell>
+                  <Table.Cell>
+                    <Button onclick={() => EditSample(sample.DisplayId)}>
+                      Edit
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
               {/each}
             </Table.Body>
           </Table.Root>

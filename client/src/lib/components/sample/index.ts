@@ -4,6 +4,7 @@ import { get } from "svelte/store";
 import type { SampleProduct } from "$lib/components/product";
 import type { SampleLocation } from "$lib/components/location";
 import { SampleMod } from "$lib/components/sample_mod";
+import type { User } from "$lib/components/user";
 
 export enum SampleState {
   in_use = "in_use",
@@ -39,6 +40,8 @@ export class Sample {
   private display_id: string | null = null;
   private app_store: SvelteStore<AppData> | null = null;
   public mods: SampleMod[];
+  public productIssue: string = "";
+  private ownerId: string | null = null;
   constructor(
     sample_data: { [key: string]: any },
     app_store?: SvelteStore<AppData>
@@ -50,9 +53,13 @@ export class Sample {
     this.locationId = Base64UUIDToString(sample_data.LocationID || "");
     this.productId = Base64UUIDToString(sample_data.ProductID || "");
     this.app_store = app_store ?? null;
+    this.ownerId = sample_data.OwnerID
+      ? Base64UUIDToString(sample_data.OwnerID)
+      : null;
     this.mods =
       sample_data.mods?.map((m: { [key: string]: any }) => new SampleMod(m)) ??
       [];
+    this.productIssue = sample_data.ProductIssue?.String || "";
   }
 
   get DisplayId(): string {
@@ -60,6 +67,14 @@ export class Sample {
       this.display_id = IDBlobToString(this.id);
     }
     return this.display_id;
+  }
+
+  get Owner(): User | null {
+    if (!this.app_store || !this.ownerId) {
+      return null;
+    }
+    const owner = get(this.app_store).users.find((u) => u.id === this.ownerId);
+    return owner ?? null;
   }
 
   get Location(): SampleLocation | null {

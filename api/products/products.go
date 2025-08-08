@@ -1,10 +1,11 @@
 package products
 
 import (
+	"database/sql"
+	"net/http"
 	"reesource-tracker/api/sync"
 	"reesource-tracker/lib/database"
 	id_helper "reesource-tracker/lib/id_helper"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -91,6 +92,7 @@ func updateProduct(c *gin.Context) {
 	var req struct {
 		Name            string `json:"name"`
 		ParentProductID string `json:"parent_product_id"`
+		PartNumber      string `json:"part_number"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -109,11 +111,13 @@ func updateProduct(c *gin.Context) {
 			return
 		}
 	}
+
 	// UpsertProduct expects UpsertProductParams struct
 	params := database.UpsertProductParams{
 		ID:              binary_uuid,
 		Name:            req.Name,
 		ParentProductID: parentBinaryUUID,
+		PartNumber:      sql.NullString{String: req.PartNumber, Valid: true},
 	}
 	err := database.Connection.UpsertProduct(c, params)
 	if err != nil {

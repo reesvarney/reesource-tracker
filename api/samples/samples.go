@@ -1,13 +1,13 @@
 package samples
 
 import (
+	"database/sql"
+	"net/http"
 	"reesource-tracker/api/samples/mods"
 	"reesource-tracker/api/sync"
 	"reesource-tracker/lib/database"
 	id_helper "reesource-tracker/lib/id_helper"
 	sampleid "reesource-tracker/lib/sample_id"
-	"database/sql"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -107,14 +107,25 @@ func updateSample(c *gin.Context) {
 		return
 	}
 
+	ownerID := c.PostForm("owner_id")
+	ownerBinary, ownerErrMsg, ownerOK := id_helper.MustParseAndMarshalUUID(ownerID)
+	if !ownerOK {
+		c.JSON(http.StatusBadRequest, gin.H{"error": ownerErrMsg})
+		return
+	}
+
+	productIssue := c.PostForm("product_issue")
+
 	current_time := time.Now()
 
 	res, err := database.Connection.UpdateOrCreateSample(c, database.UpdateOrCreateSampleParams{
 		ID:             RawSampleID,
 		LocationID:     locationBinary,
 		ProductID:      productBinary,
-		TimeRegistered: sql.NullTime{Time: current_time},
-		LastUpdate:     sql.NullTime{Time: current_time},
+		OwnerID:        ownerBinary,
+		ProductIssue:   sql.NullString{String: productIssue, Valid: true},
+		TimeRegistered: sql.NullTime{Time: current_time, Valid: true},
+		LastUpdate:     sql.NullTime{Time: current_time, Valid: true},
 		State:          c.PostForm("state"),
 	})
 	if err != nil {

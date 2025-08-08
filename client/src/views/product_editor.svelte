@@ -33,6 +33,7 @@
     let payload = {
       name: product.name,
       parent_product_id: parent_product_id[product.id] || null,
+      part_number: product.partNumber || "",
     };
     const res = await fetch(`/api/product/${product.id}`, {
       method: "POST",
@@ -91,6 +92,7 @@
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Part Number</TableHead>
               <TableHead>Parent Product</TableHead>
               <TableHead>Delete</TableHead>
             </TableRow>
@@ -100,7 +102,7 @@
               <TableRow>
                 <TableCell>
                   <Input
-                    class="input input-bordered w-full"
+                    class=" w-full"
                     bind:value={product.name}
                     oninput={(e: Event) => {
                       const target = e.target as HTMLInputElement;
@@ -108,6 +110,18 @@
                       debounceUpdate(product);
                     }}
                     placeholder="Product Name"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    class=" w-full"
+                    bind:value={product.partNumber}
+                    oninput={(e: Event) => {
+                      const target = e.target as HTMLInputElement;
+                      product.partNumber = target.value;
+                      debounceUpdate(product);
+                    }}
+                    placeholder="Part Number"
                   />
                 </TableCell>
                 <TableCell>

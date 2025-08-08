@@ -30,7 +30,9 @@
       />
     {:else}
       <Select.Item value={product.id} style="padding-left: {level * 1.5}em"
-        >{product.CombinedName}</Select.Item
+        >{product.CombinedName}
+        {#if product.partNumber}
+          ({product.partNumber}){/if}</Select.Item
       >
     {/if}
   {/if}

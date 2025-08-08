@@ -57,12 +57,19 @@ func (q *Queries) DeleteProductByID(ctx context.Context, id interface{}) error {
 	return err
 }
 
+const deleteUserByID = `-- name: DeleteUserByID :exec
+DELETE FROM users
+WHERE
+    id = ?
+`
+
+func (q *Queries) DeleteUserByID(ctx context.Context, id interface{}) error {
+	_, err := q.db.ExecContext(ctx, deleteUserByID, id)
+	return err
+}
+
 const getLocation = `-- name: GetLocation :one
-SELECT
-    id,
-    name,
-    description,
-    parent_location_id
+SELECT id, name, description, parent_location_id
 FROM
     locations
 WHERE
@@ -82,11 +89,7 @@ func (q *Queries) GetLocation(ctx context.Context, id interface{}) (Location, er
 }
 
 const getLocations = `-- name: GetLocations :many
-SELECT
-    id,
-    name,
-    description,
-    parent_location_id
+SELECT id, name, description, parent_location_id
 FROM
     locations
 ORDER BY
@@ -122,10 +125,7 @@ func (q *Queries) GetLocations(ctx context.Context) ([]Location, error) {
 }
 
 const getProductByID = `-- name: GetProductByID :one
-SELECT
-    id,
-    name,
-    parent_product_id
+SELECT id, name, parent_product_id, part_number
 FROM
     products
 WHERE
@@ -135,13 +135,18 @@ WHERE
 func (q *Queries) GetProductByID(ctx context.Context, id interface{}) (Product, error) {
 	row := q.db.QueryRowContext(ctx, getProductByID, id)
 	var i Product
-	err := row.Scan(&i.ID, &i.Name, &i.ParentProductID)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.ParentProductID,
+		&i.PartNumber,
+	)
 	return i, err
 }
 
 const getProducts = `-- name: GetProducts :many
 SELECT
-    id, name, parent_product_id
+    id, name, parent_product_id, part_number
 FROM
     products
 ORDER BY
@@ -157,7 +162,12 @@ func (q *Queries) GetProducts(ctx context.Context) ([]Product, error) {
 	var items []Product
 	for rows.Next() {
 		var i Product
-		if err := rows.Scan(&i.ID, &i.Name, &i.ParentProductID); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.ParentProductID,
+			&i.PartNumber,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -173,7 +183,7 @@ func (q *Queries) GetProducts(ctx context.Context) ([]Product, error) {
 
 const getSampleById = `-- name: GetSampleById :one
 SELECT
-    id, location_id, product_id, time_registered, last_update, state
+    id, location_id, product_id, time_registered, last_update, state, owner_id, product_issue
 FROM
     samples
 WHERE
@@ -190,15 +200,61 @@ func (q *Queries) GetSampleById(ctx context.Context, id interface{}) (Sample, er
 		&i.TimeRegistered,
 		&i.LastUpdate,
 		&i.State,
+		&i.OwnerID,
+		&i.ProductIssue,
 	)
 	return i, err
 }
 
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, name
+FROM
+    users
+WHERE
+    id = ?
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id interface{}) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const getUsers = `-- name: GetUsers :many
+SELECT id, name
+FROM
+    users
+ORDER BY
+    name
+`
+
+func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProducts = `-- name: ListProducts :many
 SELECT
-    id,
-    name,
-    parent_product_id
+    id, name, parent_product_id, part_number
 FROM
     products
 ORDER BY
@@ -214,7 +270,12 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 	var items []Product
 	for rows.Next() {
 		var i Product
-		if err := rows.Scan(&i.ID, &i.Name, &i.ParentProductID); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.ParentProductID,
+			&i.PartNumber,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -270,7 +331,7 @@ func (q *Queries) ListSampleMods(ctx context.Context, sampleID interface{}) ([]S
 
 const listSamples = `-- name: ListSamples :many
 SELECT
-    samples.id, samples.location_id, samples.product_id, samples.time_registered, samples.last_update, samples.state,
+    samples.id, samples.location_id, samples.product_id, samples.time_registered, samples.last_update, samples.state, samples.owner_id, samples.product_issue,
     COALESCE(
         (
             SELECT
@@ -282,9 +343,11 @@ SELECT
                 AND sample_mods.time_removed IS NULL
         ),
         ''
-    ) AS current_mods_summary
+    ) AS current_mods_summary,
+    users.name AS owner_name
 FROM
     samples
+LEFT JOIN users ON samples.owner_id = users.id
 ORDER BY
     time_registered
 `
@@ -296,7 +359,10 @@ type ListSamplesRow struct {
 	TimeRegistered     sql.NullTime
 	LastUpdate         sql.NullTime
 	State              string
+	OwnerID            interface{}
+	ProductIssue       sql.NullString
 	CurrentModsSummary interface{}
+	OwnerName          sql.NullString
 }
 
 func (q *Queries) ListSamples(ctx context.Context) ([]ListSamplesRow, error) {
@@ -315,7 +381,10 @@ func (q *Queries) ListSamples(ctx context.Context) ([]ListSamplesRow, error) {
 			&i.TimeRegistered,
 			&i.LastUpdate,
 			&i.State,
+			&i.OwnerID,
+			&i.ProductIssue,
 			&i.CurrentModsSummary,
+			&i.OwnerName,
 		); err != nil {
 			return nil, err
 		}
@@ -356,16 +425,20 @@ INSERT INTO
         product_id,
         time_registered,
         last_update,
-        state
+        state,
+        owner_id,
+        product_issue
     )
 VALUES
-    (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO
+    (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO
 UPDATE
 SET
     location_id = EXCLUDED.location_id,
     product_id = EXCLUDED.product_id,
     last_update = EXCLUDED.last_update,
-    state = EXCLUDED.state RETURNING id, location_id, product_id, time_registered, last_update, state
+    owner_id = EXCLUDED.owner_id,
+    product_issue = EXCLUDED.product_issue,
+    state = EXCLUDED.state RETURNING id, location_id, product_id, time_registered, last_update, state, owner_id, product_issue
 `
 
 type UpdateOrCreateSampleParams struct {
@@ -375,6 +448,8 @@ type UpdateOrCreateSampleParams struct {
 	TimeRegistered sql.NullTime
 	LastUpdate     sql.NullTime
 	State          string
+	OwnerID        interface{}
+	ProductIssue   sql.NullString
 }
 
 func (q *Queries) UpdateOrCreateSample(ctx context.Context, arg UpdateOrCreateSampleParams) (Sample, error) {
@@ -385,6 +460,8 @@ func (q *Queries) UpdateOrCreateSample(ctx context.Context, arg UpdateOrCreateSa
 		arg.TimeRegistered,
 		arg.LastUpdate,
 		arg.State,
+		arg.OwnerID,
+		arg.ProductIssue,
 	)
 	var i Sample
 	err := row.Scan(
@@ -394,6 +471,8 @@ func (q *Queries) UpdateOrCreateSample(ctx context.Context, arg UpdateOrCreateSa
 		&i.TimeRegistered,
 		&i.LastUpdate,
 		&i.State,
+		&i.OwnerID,
+		&i.ProductIssue,
 	)
 	return i, err
 }
@@ -429,22 +508,49 @@ func (q *Queries) UpsertLocation(ctx context.Context, arg UpsertLocationParams) 
 
 const upsertProduct = `-- name: UpsertProduct :exec
 INSERT INTO
-    products (id, name, parent_product_id)
+    products (id, name, parent_product_id, part_number)
 VALUES
-    (?, ?, ?) ON CONFLICT (id) DO
+    (?, ?, ?, ?) ON CONFLICT (id) DO
 UPDATE
 SET
     name = EXCLUDED.name,
-    parent_product_id = EXCLUDED.parent_product_id
+    parent_product_id = EXCLUDED.parent_product_id,
+    part_number = EXCLUDED.part_number
 `
 
 type UpsertProductParams struct {
 	ID              interface{}
 	Name            string
 	ParentProductID interface{}
+	PartNumber      sql.NullString
 }
 
 func (q *Queries) UpsertProduct(ctx context.Context, arg UpsertProductParams) error {
-	_, err := q.db.ExecContext(ctx, upsertProduct, arg.ID, arg.Name, arg.ParentProductID)
+	_, err := q.db.ExecContext(ctx, upsertProduct,
+		arg.ID,
+		arg.Name,
+		arg.ParentProductID,
+		arg.PartNumber,
+	)
+	return err
+}
+
+const upsertUser = `-- name: UpsertUser :exec
+INSERT INTO
+    users (id, name)
+VALUES
+    (?, ?) ON CONFLICT (id) DO
+UPDATE
+SET
+    name = EXCLUDED.name
+`
+
+type UpsertUserParams struct {
+	ID   interface{}
+	Name string
+}
+
+func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) error {
+	_, err := q.db.ExecContext(ctx, upsertUser, arg.ID, arg.Name)
 	return err
 }

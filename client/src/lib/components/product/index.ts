@@ -7,7 +7,7 @@ export class SampleProduct {
   public name: string;
   public parentProductID: string | null = null;
   private app_store: SvelteStore<AppData> | null = null;
-
+  public partNumber: string = "";
   constructor(
     product_data: { [key: string]: any },
     app_store: SvelteStore<AppData> | null = null
@@ -17,6 +17,7 @@ export class SampleProduct {
     this.parentProductID =
       Base64UUIDToString(product_data.ParentProductID) || null;
     this.app_store = app_store;
+    this.partNumber = product_data.PartNumber?.String || "";
   }
 
   get ParentProduct(): SampleProduct | null {

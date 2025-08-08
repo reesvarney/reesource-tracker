@@ -3,21 +3,43 @@ package sqlite_driver
 import (
 	"context"
 	"database/sql"
+	"log"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "modernc.org/sqlite"
 )
 
-func Connect(ctx context.Context, schema string) (error, *sql.DB) {
-	db, err := sql.Open("sqlite", "database/db.sqlite")
+const FOREIGN_KEY_PRAGMA = "PRAGMA foreign_keys = ON;"
+const JOURNAL_MODE_PRAGMA = "PRAGMA journal_mode=WAL;"
+const DRIVER_NAME = "sqlite"
+
+func Connect(ctx context.Context, migration_dir string) (*sql.DB, *migrate.Migrate, error) {
+	db, err := sql.Open(DRIVER_NAME, "database/db.sqlite")
 	if err != nil {
-		return err, nil
+		return nil, nil, err
 	}
 
-	// create tables
-	if _, err := db.ExecContext(ctx, schema); err != nil {
-		return err, nil
+	_, err = db.Exec(FOREIGN_KEY_PRAGMA + JOURNAL_MODE_PRAGMA)
+	if err != nil {
+		log.Fatal("Failed to enable foreign keys and WAL mode:", err)
+		return nil, nil, err
 	}
 
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
+	if err != nil {
+		println("Error creating sqlite driver", err.Error())
+		return nil, nil, err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		migration_dir,
+		DRIVER_NAME, driver)
+	if err != nil {
+		println("Error initialising migration", err.Error())
+		return nil, nil, err
+	}
 	println("Connected to sqlite database")
-	return nil, db
+
+	return db, m, nil
 }

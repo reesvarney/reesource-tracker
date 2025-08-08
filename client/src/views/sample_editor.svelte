@@ -12,6 +12,8 @@
   import { Checkbox } from "$lib/components/ui/checkbox/index.js";
   import { toast } from "svelte-sonner";
   import { Label } from "$lib/components/ui/label";
+  import { Input } from "$lib/components/ui/input";
+  import UserSelect from "$lib/components/selects/user-select.svelte";
 
   let sample: Sample = $state(new Sample({}));
   let showFittedOnly = $state(false);
@@ -22,6 +24,8 @@
   let new_mod_name = $state("");
   let adding_mod = $state(false);
   let add_mod_error = $state("");
+  let product_issue = $state("");
+  let owner_id = $state("");
 
   async function fetchSample() {
     const params = new URLSearchParams(window.location.search);
@@ -41,6 +45,8 @@
       product_id = sample.Product?.id || "";
       location_id = sample.Location?.id || "";
       sample_state = sample.state || "";
+      owner_id = sample.Owner?.id || "";
+      product_issue = sample.productIssue || "";
     } else {
       sample = new Sample(
         {
@@ -91,6 +97,8 @@
     form.append("location_id", location_id);
     form.append("product_id", product_id);
     form.append("state", sample_state);
+    form.append("owner_id", owner_id);
+    form.append("product_issue", product_issue);
     const res = await fetch(`/api/sample/${sample_id}`, {
       method: "POST",
       body: form,
@@ -107,29 +115,69 @@
   onMount(fetchSample);
 </script>
 
-<Card.Content>
-  <h2>Edit Sample: {sample.DisplayId}</h2>
-  {#if sample}
-    <form onsubmit={saveSample} class="space-y-4">
-      <div>
-        <ProductSelect
-          bind:bindValue={product_id}
-          placeholder="Select a product variant"
-          id="variant-select"
-        />
-      </div>
-      <div>
-        <LocationSelect bind:bindValue={location_id} />
-      </div>
-      <div>
-        <StateSelect bind:bindValue={sample_state} />
-      </div>
-      <div>
-        <Button type="submit">Save</Button>
-      </div>
-    </form>
-    <div class="mt-6">
-      <h3 class="font-bold mb-2">Mods</h3>
+<div class="flex flex-row gap-6 w-full flex-wrap h-full overflow-auto">
+  <Card.Root class="flex-grow">
+    <Card.Header>
+      <Card.Title>Edit Sample: {sample.DisplayId}</Card.Title>
+      <Card.Description>
+        Edit the details of the sample, including product variant, location,
+        state, owner, and mods.
+      </Card.Description>
+    </Card.Header>
+    <Card.Content>
+      {#if sample}
+        <form onsubmit={saveSample} class="space-y-4">
+          <div>
+            <Label for="variant-select" class="mb-2">Product Variant</Label>
+            <ProductSelect
+              bind:bindValue={product_id}
+              placeholder="Select a product variant"
+              id="variant-select"
+            />
+          </div>
+          <div>
+            <Label for="product-issue" class="mb-2">Product Issue</Label>
+            <Input
+              type="text"
+              bind:value={product_issue}
+              placeholder="Product Issue"
+              id="product-issue"
+              class="border rounded px-2 py-1 w-full"
+            />
+          </div>
+          <div>
+            <Label for="location-select" class="mb-2">Location</Label>
+            <LocationSelect bind:bindValue={location_id} id="location-select" />
+          </div>
+          <div>
+            <Label for="state-select" class="mb-2">State</Label>
+            <StateSelect bind:bindValue={sample_state} id="state-select" />
+          </div>
+          <div>
+            <Label for="owner-select" class="mb-2">Owner</Label>
+            <UserSelect
+              bind:bindValue={owner_id}
+              placeholder="Select owner"
+              id="owner-select"
+            />
+          </div>
+          <div>
+            <Button type="submit" class="w-full mt-6">Save Changes</Button>
+          </div>
+        </form>
+      {/if}
+    </Card.Content>
+  </Card.Root>
+
+  <Card.Root class="flex-grow max-h-full overflow-y-auto">
+    <Card.Header>
+      <Card.Title>Mods</Card.Title>
+      <Card.Description>
+        Manage mods associated with this sample. You can add, remove, and view
+        fitted mods.
+      </Card.Description>
+    </Card.Header>
+    <Card.Content>
       <div class="flex flex-wrap gap-2 mb-2 items-center">
         <Checkbox bind:checked={showFittedOnly} id="show-fitted-mods" />
         <Label class="text-sm" for="show-fitted-mods"
@@ -139,73 +187,76 @@
       {#if add_mod_error}
         <div class="text-red-500 text-sm mb-2">{add_mod_error}</div>
       {/if}
-      <Table.Root>
-        <Table.Header>
-          <Table.Row>
-            <Table.Head>Name</Table.Head>
-            <Table.Head>Date Added</Table.Head>
-            <Table.Head>Date Removed</Table.Head>
-            <Table.Head>Status</Table.Head>
-            <Table.Head>Action</Table.Head>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {#if sample.mods.length === 0}
+      <div class="max-h-[30vh] overflow-y-auto">
+        <Table.Root>
+          <Table.Header>
             <Table.Row>
-              <Table.Cell colspan={5} class="text-muted-foreground"
-                >No mods.</Table.Cell
-              >
+              <Table.Head>Name</Table.Head>
+              <Table.Head>Date Added</Table.Head>
+              <Table.Head>Date Removed</Table.Head>
+              <Table.Head>Status</Table.Head>
+              <Table.Head>Action</Table.Head>
             </Table.Row>
-          {:else}
-            {#each [...sample.mods]
-              .filter((mod) => !showFittedOnly || !mod.time_removed)
-              .sort((a, b) => {
-                // Sort by time_added descending, then by time_removed descending if both removed
-                const aTime = a.time_removed ? a.time_removed.getTime() : (a.time_added?.getTime() ?? 0);
-                const bTime = b.time_removed ? b.time_removed.getTime() : (b.time_added?.getTime() ?? 0);
-                return bTime - aTime;
-              }) as mod (mod.id)}
-              <Table.Row
-                class={!mod.time_removed
-                  ? "font-bold bg-green-50 dark:bg-green-900/20"
-                  : ""}
-              >
-                <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
-                  >{mod.name}</Table.Cell
+          </Table.Header>
+          <Table.Body>
+            {#if sample.mods.length === 0}
+              <Table.Row>
+                <Table.Cell colspan={5} class="text-muted-foreground"
+                  >No mods.</Table.Cell
                 >
-                <Table.Cell
-                  >{mod.time_added?.toLocaleString?.() ?? ""}</Table.Cell
-                >
-                <Table.Cell
-                  >{mod.time_removed
-                    ? mod.time_removed.toLocaleString()
-                    : "-"}</Table.Cell
-                >
-                <Table.Cell>
-                  {#if !mod.time_removed}
-                    <span class="text-green-700 dark:text-green-400"
-                      >Fitted</span
-                    >
-                  {:else}
-                    <span class="text-gray-500">Removed</span>
-                  {/if}
-                </Table.Cell>
-                <Table.Cell>
-                  {#if !mod.time_removed}
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onclick={() => removeMod(mod.id)}>Remove</Button
-                    >
-                  {/if}
-                </Table.Cell>
               </Table.Row>
-            {/each}
-          {/if}
-        </Table.Body>
-      </Table.Root>
-      <div class="mt-4">
-        <input
+            {:else}
+              {#each [...sample.mods]
+                .filter((mod) => !showFittedOnly || !mod.time_removed)
+                .sort((a, b) => {
+                  // Sort by time_added descending, then by time_removed descending if both removed
+                  const aTime = a.time_removed ? a.time_removed.getTime() : (a.time_added?.getTime() ?? 0);
+                  const bTime = b.time_removed ? b.time_removed.getTime() : (b.time_added?.getTime() ?? 0);
+                  return bTime - aTime;
+                }) as mod (mod.id)}
+                <Table.Row
+                  class={!mod.time_removed
+                    ? "font-bold bg-green-50 dark:bg-green-900/20"
+                    : ""}
+                >
+                  <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
+                    >{mod.name}</Table.Cell
+                  >
+                  <Table.Cell
+                    >{mod.time_added?.toLocaleString?.() ?? ""}</Table.Cell
+                  >
+                  <Table.Cell
+                    >{mod.time_removed
+                      ? mod.time_removed.toLocaleString()
+                      : "-"}</Table.Cell
+                  >
+                  <Table.Cell>
+                    {#if !mod.time_removed}
+                      <span class="text-green-700 dark:text-green-400"
+                        >Fitted</span
+                      >
+                    {:else}
+                      <span class="text-gray-500">Removed</span>
+                    {/if}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {#if !mod.time_removed}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onclick={() => removeMod(mod.id)}>Remove</Button
+                      >
+                    {/if}
+                  </Table.Cell>
+                </Table.Row>
+              {/each}
+            {/if}
+          </Table.Body>
+        </Table.Root>
+      </div>
+
+      <div class="mt-4 flex flex-row w-full gap-2">
+        <Input
           type="text"
           class="border rounded px-2 py-1"
           placeholder="Add mod..."
@@ -222,6 +273,6 @@
           >Add</Button
         >
       </div>
-    </div>
-  {/if}
-</Card.Content>
+    </Card.Content>
+  </Card.Root>
+</div>
