@@ -9,6 +9,7 @@ RUN go mod download
 COPY . .
 ENV GOCACHE=/root/.cache/go-build
 RUN --mount=type=cache,target="/root/.cache/go-build" bash -c ". /root/.bashrc && go build -o ./build/"
+COPY ./database/migrations ./build/database/migrations
 
 FROM oven/bun:latest AS bun_builder
 WORKDIR /build
@@ -25,6 +26,6 @@ RUN update-ca-certificates
 COPY --from=go_builder /build/build .
 COPY --from=bun_builder /build/build .
 RUN mkdir /app/database
-COPY ./database/migrations /app/database/migrations
+COPY --from=go_builder /build/database/migrations /app/migrations
 EXPOSE 80
 ENTRYPOINT ["/app/reesource-tracker"]
