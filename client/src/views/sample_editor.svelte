@@ -115,18 +115,23 @@
   onMount(fetchSample);
 </script>
 
-<div class="flex flex-row gap-6 w-full flex-wrap h-full overflow-auto">
-  <Card.Root class="flex-grow">
-    <Card.Header>
-      <Card.Title>Edit Sample: {sample.DisplayId}</Card.Title>
-      <Card.Description>
-        Edit the details of the sample, including product variant, location,
-        state, owner, and mods.
-      </Card.Description>
-    </Card.Header>
-    <Card.Content>
-      {#if sample}
-        <form onsubmit={saveSample} class="space-y-4">
+<form
+  onsubmit={saveSample}
+  class="flex flex-col gap-4 p-4 min-h-full max-h-full overflow-auto"
+>
+  <div
+    class="flex flex-row gap-6 w-full flex-wrap h-full overflow-auto flex-grow"
+  >
+    <Card.Root class="flex-grow">
+      <Card.Header>
+        <Card.Title>Edit Sample: {sample.DisplayId}</Card.Title>
+        <Card.Description>
+          Edit the details of the sample, including product variant, location,
+          state, owner, and mods.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        <div class="flex flex-col gap-6">
           <div>
             <Label for="variant-select" class="mb-2">Product Variant</Label>
             <ProductSelect
@@ -161,118 +166,122 @@
               id="owner-select"
             />
           </div>
-          <div>
-            <Button type="submit" class="w-full mt-6">Save Changes</Button>
-          </div>
-        </form>
-      {/if}
-    </Card.Content>
-  </Card.Root>
+        </div>
+      </Card.Content>
+    </Card.Root>
 
-  <Card.Root class="flex-grow max-h-full overflow-y-auto">
-    <Card.Header>
-      <Card.Title>Mods</Card.Title>
-      <Card.Description>
-        Manage mods associated with this sample. You can add, remove, and view
-        fitted mods.
-      </Card.Description>
-    </Card.Header>
-    <Card.Content>
-      <div class="flex flex-wrap gap-2 mb-2 items-center">
-        <Checkbox bind:checked={showFittedOnly} id="show-fitted-mods" />
-        <Label class="text-sm" for="show-fitted-mods"
-          >Show only fitted mods</Label
-        >
-      </div>
-      {#if add_mod_error}
-        <div class="text-red-500 text-sm mb-2">{add_mod_error}</div>
-      {/if}
-      <div class="max-h-[30vh] overflow-y-auto">
-        <Table.Root>
-          <Table.Header>
-            <Table.Row>
-              <Table.Head>Name</Table.Head>
-              <Table.Head>Date Added</Table.Head>
-              <Table.Head>Date Removed</Table.Head>
-              <Table.Head>Status</Table.Head>
-              <Table.Head>Action</Table.Head>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {#if sample.mods.length === 0}
+    <Card.Root class="flex-grow max-h-full overflow-y-auto">
+      <Card.Header>
+        <Card.Title>Mods</Card.Title>
+        <Card.Description>
+          Manage mods associated with this sample. You can add, remove, and view
+          fitted mods.
+        </Card.Description>
+      </Card.Header>
+      <Card.Content>
+        <div class="flex flex-wrap gap-2 mb-2 items-center">
+          <Checkbox bind:checked={showFittedOnly} id="show-fitted-mods" />
+          <Label class="text-sm" for="show-fitted-mods"
+            >Show only fitted mods</Label
+          >
+        </div>
+        {#if add_mod_error}
+          <div class="text-red-500 text-sm mb-2">{add_mod_error}</div>
+        {/if}
+        <div class="max-h-[30vh] overflow-y-auto">
+          <Table.Root>
+            <Table.Header>
               <Table.Row>
-                <Table.Cell colspan={5} class="text-muted-foreground"
-                  >No mods.</Table.Cell
-                >
+                <Table.Head>Name</Table.Head>
+                <Table.Head>Date Added</Table.Head>
+                <Table.Head>Date Removed</Table.Head>
+                <Table.Head>Status</Table.Head>
+                <Table.Head>Action</Table.Head>
               </Table.Row>
-            {:else}
-              {#each [...sample.mods]
-                .filter((mod) => !showFittedOnly || !mod.time_removed)
-                .sort((a, b) => {
-                  // Sort by time_added descending, then by time_removed descending if both removed
-                  const aTime = a.time_removed ? a.time_removed.getTime() : (a.time_added?.getTime() ?? 0);
-                  const bTime = b.time_removed ? b.time_removed.getTime() : (b.time_added?.getTime() ?? 0);
-                  return bTime - aTime;
-                }) as mod (mod.id)}
-                <Table.Row
-                  class={!mod.time_removed
-                    ? "font-bold bg-green-50 dark:bg-green-900/20"
-                    : ""}
-                >
-                  <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
-                    >{mod.name}</Table.Cell
+            </Table.Header>
+            <Table.Body>
+              {#if sample.mods.length === 0}
+                <Table.Row>
+                  <Table.Cell colspan={5} class="text-muted-foreground"
+                    >No mods.</Table.Cell
                   >
-                  <Table.Cell
-                    >{mod.time_added?.toLocaleString?.() ?? ""}</Table.Cell
-                  >
-                  <Table.Cell
-                    >{mod.time_removed
-                      ? mod.time_removed.toLocaleString()
-                      : "-"}</Table.Cell
-                  >
-                  <Table.Cell>
-                    {#if !mod.time_removed}
-                      <span class="text-green-700 dark:text-green-400"
-                        >Fitted</span
-                      >
-                    {:else}
-                      <span class="text-gray-500">Removed</span>
-                    {/if}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {#if !mod.time_removed}
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onclick={() => removeMod(mod.id)}>Remove</Button
-                      >
-                    {/if}
-                  </Table.Cell>
                 </Table.Row>
-              {/each}
-            {/if}
-          </Table.Body>
-        </Table.Root>
-      </div>
+              {:else}
+                {#each [...sample.mods]
+                  .filter((mod) => !showFittedOnly || !mod.time_removed)
+                  .sort((a, b) => {
+                    // Sort by time_added descending, then by time_removed descending if both removed
+                    const aTime = a.time_removed ? a.time_removed.getTime() : (a.time_added?.getTime() ?? 0);
+                    const bTime = b.time_removed ? b.time_removed.getTime() : (b.time_added?.getTime() ?? 0);
+                    return bTime - aTime;
+                  }) as mod (mod.id)}
+                  <Table.Row
+                    class={!mod.time_removed
+                      ? "font-bold bg-green-50 dark:bg-green-900/20"
+                      : ""}
+                  >
+                    <Table.Cell class="max-w-32 overflow-hidden text-ellipsis"
+                      >{mod.name}</Table.Cell
+                    >
+                    <Table.Cell
+                      >{mod.time_added?.toLocaleString?.() ?? ""}</Table.Cell
+                    >
+                    <Table.Cell
+                      >{mod.time_removed
+                        ? mod.time_removed.toLocaleString()
+                        : "-"}</Table.Cell
+                    >
+                    <Table.Cell>
+                      {#if !mod.time_removed}
+                        <span class="text-green-700 dark:text-green-400"
+                          >Fitted</span
+                        >
+                      {:else}
+                        <span class="text-gray-500">Removed</span>
+                      {/if}
+                    </Table.Cell>
+                    <Table.Cell>
+                      {#if !mod.time_removed}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onclick={() => removeMod(mod.id)}>Remove</Button
+                        >
+                      {/if}
+                    </Table.Cell>
+                  </Table.Row>
+                {/each}
+              {/if}
+            </Table.Body>
+          </Table.Root>
+        </div>
 
-      <div class="mt-4 flex flex-row w-full gap-2">
-        <Input
-          type="text"
-          class="border rounded px-2 py-1"
-          placeholder="Add mod..."
-          bind:value={new_mod_name}
-          onkeydown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addMod();
-            }
-          }}
-          disabled={adding_mod}
-        />
-        <Button onclick={addMod} disabled={adding_mod || !new_mod_name.trim()}
-          >Add</Button
-        >
+        <div class="mt-4 flex flex-row w-full gap-2">
+          <Input
+            type="text"
+            class="border rounded px-2 py-1"
+            placeholder="Add mod..."
+            bind:value={new_mod_name}
+            onkeydown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addMod();
+              }
+            }}
+            disabled={adding_mod}
+          />
+          <Button onclick={addMod} disabled={adding_mod || !new_mod_name.trim()}
+            >Add</Button
+          >
+        </div>
+      </Card.Content>
+    </Card.Root>
+  </div>
+  <Card.Root>
+    <Card.Content>
+      <div>
+        <Button type="submit" class="w-full">Save Changes</Button>
       </div>
     </Card.Content>
   </Card.Root>
-</div>
+</form>
