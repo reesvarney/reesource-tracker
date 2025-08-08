@@ -6,7 +6,10 @@ RUN mkdir /build/build
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
-COPY . .
+COPY api .
+COPY database .
+COPY lib .
+COPY main.go .
 ENV GOCACHE=/root/.cache/go-build
 RUN --mount=type=cache,target="/root/.cache/go-build" bash -c ". /root/.bashrc && go build -o ./build/"
 COPY ./database/migrations /build/migrations
