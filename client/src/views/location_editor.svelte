@@ -104,7 +104,7 @@
               <TableRow>
                 <TableCell>
                   <Input
-                    class="input input-bordered w-full"
+                    class="input input-bordered w-full my-2"
                     bind:value={location.name}
                     oninput={(e: Event) => {
                       const target = e.target as HTMLInputElement;
@@ -116,7 +116,7 @@
                 </TableCell>
                 <TableCell>
                   <Input
-                    class="input input-bordered w-full"
+                    class="input input-bordered w-full my-2"
                     bind:value={location.description}
                     onchange={(e: Event) => {
                       const target = e.target as HTMLInputElement;

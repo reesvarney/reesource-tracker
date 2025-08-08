@@ -64,6 +64,10 @@
     }
     toast.success("User deleted.");
   }
+
+  const valid_states = Object.values(SampleState).filter(
+    (a) => a !== SampleState.unknown
+  );
 </script>
 
 <Card.Root class="h-full max-h-full overflow-y-auto max-h-[calc(100vh-6rem)]">
@@ -80,8 +84,13 @@
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Samples Assigned</TableHead>
-              <TableHead>Delete</TableHead>
+              {#each valid_states as state_type}
+                <TableHead class="capitalise"
+                  >Samples {state_type.replace("_", " ")}</TableHead
+                >
+              {/each}
+              <TableHead></TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -89,7 +98,7 @@
               <TableRow>
                 <TableCell>
                   <Input
-                    class="input input-bordered w-full"
+                    class="input input-bordered w-full my-2"
                     bind:value={user.name}
                     oninput={(e: Event) => {
                       const target = e.target as HTMLInputElement;
@@ -99,13 +108,12 @@
                     placeholder="User Name"
                   />
                 </TableCell>
-                <TableCell>
-                  <div class="text-xs text-gray-600 flex flex-col gap-1">
-                    {#each Object.entries(user.AssignedSamples) as entry}
-                      <div>{entry[1]} {entry[0].replace(/_/g, " ")}</div>
-                    {/each}
-                  </div>
-                </TableCell>
+
+                {#each valid_states as state_type}
+                  <TableCell>
+                    {user.AssignedSamples[state_type] || 0}
+                  </TableCell>
+                {/each}
                 <TableCell>
                   <Button
                     type="button"

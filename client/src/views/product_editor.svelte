@@ -102,7 +102,7 @@
               <TableRow>
                 <TableCell>
                   <Input
-                    class=" w-full"
+                    class=" w-full my-2"
                     bind:value={product.name}
                     oninput={(e: Event) => {
                       const target = e.target as HTMLInputElement;
@@ -114,7 +114,7 @@
                 </TableCell>
                 <TableCell>
                   <Input
-                    class=" w-full"
+                    class=" w-full my-2"
                     bind:value={product.partNumber}
                     oninput={(e: Event) => {
                       const target = e.target as HTMLInputElement;
