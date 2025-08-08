@@ -316,7 +316,11 @@
                   <Table.Cell>{sample.Owner?.name}</Table.Cell>
                   <Table.Cell>{sample.Status}</Table.Cell>
                   <Table.Cell>
-                    <Button onclick={() => EditSample(sample.DisplayId)}>
+                    <Button
+                      variant="link"
+                      class="py-0 my-0"
+                      onclick={() => EditSample(sample.DisplayId)}
+                    >
                       Edit
                     </Button>
                   </Table.Cell>
