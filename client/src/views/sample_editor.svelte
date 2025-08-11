@@ -149,11 +149,11 @@
             />
           </div>
           <div>
-            <Label for="product-issue" class="mb-2">Product Issue</Label>
+            <Label for="product-issue" class="mb-2">PCB Issue</Label>
             <Input
               type="text"
               bind:value={product_issue}
-              placeholder="Product Issue"
+              placeholder="PCB Issue"
               id="product-issue"
               class="border rounded px-2 py-1 w-full"
             />

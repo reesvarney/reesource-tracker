@@ -324,12 +324,12 @@
                 class="font-bold flex items-center gap-2 mb-2"
                 for="product-issue-update-enabled"
               >
-                Update Product Issue
+                Update PCB Issue
               </Label>
               <Input
                 type="text"
                 bind:value={productIssue}
-                placeholder="Product Issue"
+                placeholder="PCB Issue"
                 id="product-issue-input"
                 class="border rounded px-2 py-1 w-full"
                 disabled={!updateProductIssue}
