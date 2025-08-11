@@ -294,16 +294,15 @@
                         <Select.Item value="never">Never Modded</Select.Item>
                       </Select.Content>
                     </Select.Root>
-                  </div>
-                  <div>
-                    <Label class="mb-2" for="mod-query">Mods</Label>
-                    <Input
-                      type="text"
-                      placeholder="Filter by mods"
-                      class="input input-bordered w-full"
-                      bind:value={modQuery}
-                      disabled={lockModFilter}
-                    />
+                    {#if !lockModFilter}
+                      <Input
+                        type="text"
+                        placeholder="Filter by specific mods"
+                        class="input input-bordered w-full"
+                        bind:value={modQuery}
+                        disabled={lockModFilter}
+                      />
+                    {/if}
                   </div>
                   <div>
                     <Label class="mb-2" for="location-select">Location</Label>
