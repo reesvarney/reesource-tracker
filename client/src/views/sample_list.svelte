@@ -6,6 +6,8 @@
   import StateSelect from "$lib/components/selects/state-select.svelte";
   import { AppStore } from "$lib/components/app_store";
   import { Checkbox } from "$lib/components/ui/checkbox";
+  import * as Sheet from "$lib/components/ui/sheet/index.js";
+  import * as Select from "$lib/components/ui/select";
   import * as Pagination from "$lib/components/ui/pagination";
   import * as Card from "$lib/components/ui/card";
   import { Separator } from "$lib/components/ui/separator";
@@ -23,6 +25,7 @@
 
   let showUnassignedOrArchived = $state(false);
   let modQuery = $state("");
+  let moddedState = $state("any"); // New filter for modded state
   let selectedState = $state("");
   let ownerQuery = $state(""); // Will hold user id
   let issueQuery = $state("");
@@ -150,6 +153,22 @@
         );
       }
     }
+    // Modded state filter
+    if (moddedState !== "any") {
+      result = result.filter((sample) => {
+        const summary = sample.ModSummary?.toLowerCase() || "";
+        if (moddedState === "active") {
+          return summary !== "no mods" && summary !== "no active mods";
+        } else if (moddedState === "noactive") {
+          // No active mods, but previously modded
+          return summary === "no active mods";
+        } else if (moddedState === "never") {
+          // Never modded
+          return summary === "no mods";
+        }
+        return true;
+      });
+    }
     if (modQuery != "") {
       const queries = modQuery
         .toLowerCase()
@@ -205,77 +224,114 @@
         <Card.Description>
           Find and manage samples in the system.
         </Card.Description>
-        <div class=" flex flex-wrap items-start gap-12 flex-row w-full">
-          <div class="flex flex-row gap-8">
-            <div>
-              <Label class=" mb-2" for="product-select">Product</Label>
-              <ProductSelect
-                bind:bindValue={selectedProduct}
-                filterMode={true}
-              />
-            </div>
-
-            <div>
-              <Label class=" mb-2" for="issue-query">Issue</Label>
-              <Input
-                type="text"
-                placeholder="Filter by issue"
-                class="input input-bordered w-full max-w-xs"
-                bind:value={issueQuery}
-              />
-            </div>
-          </div>
-          <div>
-            <Label class=" mb-2" for="mod-query">Mods</Label>
-            <Input
-              type="text"
-              placeholder="Filter by mods"
-              class="input input-bordered w-full max-w-xs"
-              bind:value={modQuery}
-            />
-          </div>
-
-          <div>
-            <Label class=" mb-2" for="location-select">Location</Label>
-            <LocationSelect
-              bind:bindValue={selectedLocation}
-              filterMode={true}
-            />
-          </div>
-          <div>
-            <Label class=" mb-2" for="owner-query">Owner</Label>
-            <UserSelect bind:bindValue={ownerQuery} filterMode={true} />
-          </div>
-
-          <div>
-            <Label class=" mb-2" for="state-select">State</Label>
-            <div class="flex items-center self-end gap-2">
-              <StateSelect
-                bind:bindValue={selectedState}
-                filterMode={true}
-                showUnassignedOrArchived={true}
-              />
-              {#if selectedState === ""}
-                <Checkbox
-                  id="show-unassigned"
-                  bind:checked={showUnassignedOrArchived}
-                />
-                <Label for="show-unassigned" class="no-wrap min-w-max">
-                  Include Unassigned or Archived Samples
-                </Label>
-              {/if}
-            </div>
-          </div>
-
-          <div class="self-end align-self-end grow flex flex-row justify-end">
-            <Button
-              variant="outline"
-              onclick={() => {
-                $AppStore.currentPage = "find_sample";
-                $AppStore = $AppStore;
-              }}>Find Sample by ID or QR Code</Button
-            >
-          </div>
+        <div class="flex flex-row w-full justify-between items-center">
+          <Sheet.Root>
+            <Sheet.Trigger>
+              <Button variant="outline">Filters</Button>
+            </Sheet.Trigger>
+            <Sheet.Content side="left" class="max-w-max w-auto pl-1 pr-6">
+              <Sheet.Header>
+                <Sheet.Title>Sample Filters</Sheet.Title>
+                <Sheet.Description>
+                  Filter the sample list by product, issue, mods, location,
+                  owner, state, and more.
+                </Sheet.Description>
+              </Sheet.Header>
+              <div class="pl-3 pr-6">
+                <div class="flex flex-col gap-6">
+                  <div>
+                    <Label class="mb-2" for="product-select">Product</Label>
+                    <ProductSelect
+                      bind:bindValue={selectedProduct}
+                      filterMode={true}
+                    />
+                  </div>
+                  <div>
+                    <Label class="mb-2" for="issue-query">Issue</Label>
+                    <Input
+                      type="text"
+                      placeholder="Filter by issue"
+                      class="input input-bordered w-full"
+                      bind:value={issueQuery}
+                    />
+                  </div>
+                  <div>
+                    <Label class="mb-2" for="modded-state">Modded State</Label>
+                    <Select.Root bind:value={moddedState} type="single">
+                      <Select.Trigger id="modded-state" class="w-full mb-2">
+                        {(() => {
+                          switch (moddedState) {
+                            case "active":
+                              return "Active Mods";
+                            case "noactive":
+                              return "No Active Mods, Previously Modded";
+                            case "never":
+                              return "Never Modded";
+                            default:
+                              return "Any";
+                          }
+                        })()}
+                      </Select.Trigger>
+                      <Select.Content class="w-full">
+                        <Select.Item value="any">Any</Select.Item>
+                        <Select.Item value="active">Active Mods</Select.Item>
+                        <Select.Item value="noactive"
+                          >No Active Mods, Previously Modded</Select.Item
+                        >
+                        <Select.Item value="never">Never Modded</Select.Item>
+                      </Select.Content>
+                    </Select.Root>
+                  </div>
+                  <div>
+                    <Label class="mb-2" for="mod-query">Mods</Label>
+                    <Input
+                      type="text"
+                      placeholder="Filter by mods"
+                      class="input input-bordered w-full"
+                      bind:value={modQuery}
+                    />
+                  </div>
+                  <div>
+                    <Label class="mb-2" for="location-select">Location</Label>
+                    <LocationSelect
+                      bind:bindValue={selectedLocation}
+                      filterMode={true}
+                    />
+                  </div>
+                  <div>
+                    <Label class="mb-2" for="owner-query">Owner</Label>
+                    <UserSelect bind:bindValue={ownerQuery} filterMode={true} />
+                  </div>
+                  <div>
+                    <Label class="mb-2" for="state-select">State</Label>
+                    <StateSelect
+                      bind:bindValue={selectedState}
+                      filterMode={true}
+                      showUnassignedOrArchived={true}
+                    />
+                    {#if selectedState === ""}
+                      <div class="flex mt-4 items-center gap-2">
+                        <Checkbox
+                          id="show-unassigned"
+                          bind:checked={showUnassignedOrArchived}
+                        />
+                        <Label for="show-unassigned" class="no-wrap min-w-max">
+                          Include Unassigned or Archived Samples
+                        </Label>
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+              </div>
+            </Sheet.Content>
+          </Sheet.Root>
+          <Button
+            variant="outline"
+            onclick={() => {
+              $AppStore.currentPage = "find_sample";
+              $AppStore = $AppStore;
+            }}>Find Sample by ID or QR Code</Button
+          >
         </div>
       </Card.Header>
       <Separator />
