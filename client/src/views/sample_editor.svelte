@@ -27,6 +27,14 @@
   let product_issue = $state("");
   let owner_id = $state("");
 
+  AppStore.subscribe((state) => {
+    const this_sample_new = state.samples.find((s) => s.id === sample.id);
+
+    if (this_sample_new && this_sample_new !== sample) {
+      fetchSample();
+    }
+  });
+
   async function fetchSample() {
     const params = new URLSearchParams(window.location.search);
     const new_sample_id = params.get("sample_id") || "";
