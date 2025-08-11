@@ -206,9 +206,22 @@
       selectedProduct ||
       modQuery ||
       selectedState ||
-      showUnassignedOrArchived;
+      showUnassignedOrArchived ||
+      issueQuery ||
+      ownerQuery ||
+      moddedState;
 
     page = 1; // Reset to first page when filters change
+  });
+
+  let lockModFilter = $derived(
+    moddedState === "never" || moddedState === "noactive"
+  );
+
+  $effect(() => {
+    if (lockModFilter) {
+      modQuery = ""; // Clear mod query if modded state is locked
+    }
   });
 
   function EditSample(sampleId: string) {
@@ -289,6 +302,7 @@
                       placeholder="Filter by mods"
                       class="input input-bordered w-full"
                       bind:value={modQuery}
+                      disabled={lockModFilter}
                     />
                   </div>
                   <div>
