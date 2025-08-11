@@ -19,7 +19,8 @@
     top_level_products =
       new_val.products.filter(
         (p: SampleProduct) =>
-          p.parentProductID === "" || p.parentProductID === null
+          (p.parentProductID === "" || p.parentProductID === null) &&
+          p.name !== ""
       ) ?? [];
   });
 

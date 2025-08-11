@@ -9,7 +9,7 @@
 </script>
 
 {#each products as product (product.id)}
-  {#if !filterOutIds.includes(product.id)}
+  {#if !filterOutIds.includes(product.id) && product.name !== ""}
     {#if product.ChildProducts && product.ChildProducts.length > 0}
       <Select.Label style="padding-left: max({level * 1.5}em, 0.5em)"
         >{product.CombinedName}</Select.Label

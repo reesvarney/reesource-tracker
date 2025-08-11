@@ -9,7 +9,7 @@
 </script>
 
 {#each locations as location (location.id)}
-  {#if !filterOutIds.includes(location.id)}
+  {#if !filterOutIds.includes(location.id) && location.name !== ""}
     {#if location.ChildLocations && location.ChildLocations.length > 0}
       <Select.Label style="padding-left: max({level * 1.5}em, 0.5em)"
         >{location.CombinedName}</Select.Label

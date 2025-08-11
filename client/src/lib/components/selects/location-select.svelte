@@ -19,7 +19,8 @@
     top_level_locations =
       new_val.locations.filter(
         (l: SampleLocation) =>
-          l.parentLocationID === "" || l.parentLocationID === null
+          (l.parentLocationID === "" || l.parentLocationID === null) &&
+          l.name !== ""
       ) ?? [];
   });
 </script>
