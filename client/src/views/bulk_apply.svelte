@@ -15,6 +15,8 @@
   let sampleState = $state("");
   import { Badge } from "$lib/components/ui/badge/index.js";
   import { Checkbox } from "$lib/components/ui/checkbox/index.js";
+  import UserSelect from "$lib/components/selects/user-select.svelte";
+  import { Input } from "$lib/components/ui/input";
   let { active = $bindable(false) } = $props();
   // QR scan handler
   function handleQRScan(text: string) {
@@ -76,6 +78,10 @@
   let updateProduct = $state(false);
   let updateLocation = $state(false);
   let updateState = $state(false);
+  let updateOwner = $state(false);
+  let updateProductIssue = $state(false);
+  let selectedOwner = $state("");
+  let productIssue = $state("");
   let modNames: string[] = $state([]);
   let modInput = $state("");
   let modError = $state("");
@@ -86,6 +92,8 @@
       !updateProduct &&
       !updateLocation &&
       !updateState &&
+      !updateOwner &&
+      !updateProductIssue &&
       modNames.length === 0
     ) {
       toast.error(
@@ -103,9 +111,17 @@
       let productId = selectedProduct;
       let locationId = selectedLocation;
       let state = sampleState;
+      let ownerId = selectedOwner;
+      let issue = productIssue;
       let sampleFetched = false;
       // If a field is not enabled, fetch the current value for this sample
-      if (!updateProduct || !updateLocation || !updateState) {
+      if (
+        !updateProduct ||
+        !updateLocation ||
+        !updateState ||
+        !updateOwner ||
+        !updateProductIssue
+      ) {
         const res = await fetch(`/api/sample/${id}`);
         if (res.ok) {
           sampleFetched = true;
@@ -113,6 +129,8 @@
           if (!updateProduct) productId = data.sample.ProductID || "";
           if (!updateLocation) locationId = data.sample.LocationID || "";
           if (!updateState) state = data.sample.State || "";
+          if (!updateOwner) ownerId = data.sample.OwnerID || "";
+          if (!updateProductIssue) issue = data.sample.ProductIssue || "";
         }
       }
       // If sample not found and state is not configured, fallback to 'available'
@@ -120,11 +138,19 @@
         state = "available";
       }
       // Apply main changes
-      if (updateProduct || updateLocation || updateState) {
+      if (
+        updateProduct ||
+        updateLocation ||
+        updateState ||
+        updateOwner ||
+        updateProductIssue
+      ) {
         const form = new FormData();
         form.append("product_id", productId);
         form.append("location_id", locationId);
         form.append("state", state);
+        form.append("owner_id", ownerId);
+        form.append("product_issue", issue);
         const res = await fetch(`/api/sample/${id}`, {
           method: "POST",
           body: form,
@@ -288,9 +314,50 @@
             </div>
           </div>
 
+          <div class="flex flex-row gap-2">
+            <Checkbox
+              bind:checked={updateProductIssue}
+              id="product-issue-update-enabled"
+            />
+            <div class="flex-grow">
+              <Label
+                class="font-bold flex items-center gap-2 mb-2"
+                for="product-issue-update-enabled"
+              >
+                Update Product Issue
+              </Label>
+              <Input
+                type="text"
+                bind:value={productIssue}
+                placeholder="Product Issue"
+                id="product-issue-input"
+                class="border rounded px-2 py-1 w-full"
+                disabled={!updateProductIssue}
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-row gap-2">
+            <Checkbox bind:checked={updateOwner} id="owner-update-enabled" />
+            <div class="flex-grow">
+              <Label
+                class="font-bold flex items-center gap-2 mb-2"
+                for="owner-update-enabled"
+              >
+                Update Owner
+              </Label>
+              <UserSelect
+                bind:bindValue={selectedOwner}
+                placeholder="Select owner"
+                id="owner-select"
+                disabled={!updateOwner}
+              />
+            </div>
+          </div>
+
           <div class="flex flex-col gap-2 flex-grow">
             <div class="flex gap-2 items-center">
-              <input
+              <Input
                 type="text"
                 class="border rounded px-2 py-1 flex-1"
                 placeholder="Add mod (optional, applies with changes)"
