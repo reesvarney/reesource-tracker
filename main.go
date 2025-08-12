@@ -27,6 +27,7 @@ func main() {
 	} else {
 		r = gin.New() // no Logger
 		r.Use(gin.Recovery())
+		gin.SetMode(gin.ReleaseMode)
 	}
 	if devmode {
 		println("Running frontend proxy")
