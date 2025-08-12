@@ -49,7 +49,7 @@ func main() {
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
-			if !strings.Contains(absPath, safePath) {
+			if absPath != safePath && !strings.HasPrefix(absPath, safePath+string(os.PathSeparator)) {
 				c.AbortWithStatus(http.StatusForbidden)
 				return
 			}
