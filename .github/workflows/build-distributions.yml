@@ -119,4 +119,6 @@ jobs:
           file: Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ghcr.io/${{ github.repository }}/reesource-tracker:latest
+          tags: |
+            ghcr.io/${{ github.repository }}/reesource-tracker:${{ github.sha }}
+            ${{ github.ref == 'refs/heads/main' && format('ghcr.io/{0}/reesource-tracker:latest', github.repository) || format('ghcr.io/{0}/reesource-tracker:{1}', github.repository, github.ref_name) }}
