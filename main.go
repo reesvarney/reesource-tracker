@@ -6,6 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path/filepath"
 	"reesource-tracker/api"
 	"reesource-tracker/lib/database"
 	"runtime"
@@ -33,12 +34,22 @@ func main() {
 	} else {
 		println("Serving frontend static files")
 		r.LoadHTMLGlob("./client/*.html")
+		safePath, err := filepath.Abs("./client")
+		if err != nil {
+			println("Could not resolve client path:", err)
+			return
+		}
 		r.GET("/app/*path", func(c *gin.Context) {
 			path := c.Param("path")
 			// Check if the first segment is "assets"
 			segments := strings.SplitN(path, "/", 3)
-			if strings.Contains(segments[0], "..") {
-				c.String(http.StatusBadRequest, "Invalid file name")
+			absPath, err := filepath.Abs(filepath.Join(safePath, path))
+			if err != nil {
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			if !strings.Contains(absPath, safePath) {
+				c.AbortWithStatus(http.StatusForbidden)
 				return
 			}
 			if len(segments) > 1 && segments[1] == "assets" {
