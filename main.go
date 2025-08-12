@@ -37,6 +37,10 @@ func main() {
 			path := c.Param("path")
 			// Check if the first segment is "assets"
 			segments := strings.SplitN(path, "/", 3)
+			if strings.Contains(segments[0], "..") {
+				c.String(http.StatusBadRequest, "Invalid file name")
+				return
+			}
 			if len(segments) > 1 && segments[1] == "assets" {
 				c.File("./client" + path)
 				return
