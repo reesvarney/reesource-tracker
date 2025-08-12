@@ -25,9 +25,9 @@ func main() {
 	if devmode {
 		r = gin.Default() // includes Logger and Recovery
 	} else {
+		gin.SetMode(gin.ReleaseMode)
 		r = gin.New() // no Logger
 		r.Use(gin.Recovery())
-		gin.SetMode(gin.ReleaseMode)
 	}
 	if devmode {
 		println("Running frontend proxy")
@@ -71,6 +71,7 @@ func main() {
 		r.Run("localhost:80")
 	} else {
 		r.Run("0.0.0.0:80")
+		println("Server started on port 80")
 	}
 }
 
