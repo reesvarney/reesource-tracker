@@ -3,7 +3,7 @@ package samples
 import (
 	"database/sql"
 	"net/http"
-	"reesource-tracker/api/samples/mods"
+	"reesource-tracker/api/samples/sample_mods"
 	"reesource-tracker/api/sync"
 	"reesource-tracker/lib/database"
 	id_helper "reesource-tracker/lib/id_helper"
@@ -25,7 +25,7 @@ func Routes(route *gin.RouterGroup) {
 	route.GET("/sample/:sample_id", getSample)
 	route.POST("/sample/:sample_id", updateSample)
 	route.GET("/generate_samples", generateUniqueSamples)
-	mods.Routes(route.Group("/sample/:sample_id/mods"))
+	sample_mods.Routes(route.Group("/sample/:sample_id/mods"))
 }
 
 func getSample(c *gin.Context) {

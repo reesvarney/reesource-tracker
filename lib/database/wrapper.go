@@ -8,12 +8,14 @@ import (
 
 var Connection *Queries
 
+const DATABASE_LOCATION = "database/db.sqlite"
+
 func Connect(ctx context.Context) {
 	migration_dir := "file://database/migrations"
 	if _, err := os.Stat("migrations"); err == nil {
 		migration_dir = "file://migrations"
 	}
-	db, m, err := sqlite_driver.Connect(ctx, migration_dir)
+	db, m, err := sqlite_driver.Connect(ctx, migration_dir, DATABASE_LOCATION)
 	if err != nil {
 		println("Got error", err.Error())
 		return
