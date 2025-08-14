@@ -2,7 +2,7 @@
   import { SampleState } from "$lib/components/sample";
   import * as Select from "$lib/components/ui/select";
   let {
-    bindValue = "",
+    bindValue = $bindable(""),
     disabled = false,
     placeholder = "Select state",
     id = "state-select",
@@ -32,14 +32,14 @@
     filterMode = false,
     showUnassignedOrArchived = true,
   }: {
-    bindValue: string;
-    disabled: boolean;
-    placeholder: string;
-    id: string;
-    required: boolean;
-    options: { value: string; label: string }[];
-    filterMode: boolean;
-    showUnassignedOrArchived: boolean;
+    bindValue?: string;
+    disabled?: boolean;
+    placeholder?: string;
+    id?: string;
+    required?: boolean;
+    options?: { value: string; label: string }[];
+    filterMode?: boolean;
+    showUnassignedOrArchived?: boolean;
   } = $props();
 
   if (filterMode) {

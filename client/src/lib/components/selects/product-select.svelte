@@ -4,7 +4,7 @@
   import { AppStore } from "$lib/components/app_store";
   import type { SampleProduct } from "$lib/components/product";
   let {
-    bindValue = "",
+    bindValue = $bindable(""),
     disabled = false,
     placeholder = "Select a product",
     id = "product-select",
@@ -14,15 +14,15 @@
     filterMode = false,
     filterOutIds = [],
   }: {
-    bindValue: string;
-    disabled: boolean;
-    placeholder: string;
-    id: string;
-    required: boolean;
-    options: { value: string; label: string }[];
-    onValueChange: (value: string) => void;
-    filterMode: boolean;
-    filterOutIds: string[];
+    bindValue?: string;
+    disabled?: boolean;
+    placeholder?: string;
+    id?: string;
+    required?: boolean;
+    options?: { value: string; label: string }[];
+    onValueChange?: (value: string) => void;
+    filterMode?: boolean;
+    filterOutIds?: string[];
   } = $props();
 
   let top_level_products: SampleProduct[] = $state([]);
