@@ -11,15 +11,27 @@ export class SampleLocation {
     private app_store: SvelteStore<AppData> | null = null;
 
     constructor(
-        location_data: { [key: string]: any },
+        location_data: Record<string, unknown>,
         app_store: SvelteStore<AppData> | null = null,
     ) {
-        this.id = Base64UUIDToString(location_data.ID || '');
-        this.name = location_data.Name || '';
-        this.description = location_data.Description.String || '';
-        this.parentLocationID = Base64UUIDToString(
-            location_data.ParentLocationID || '',
-        );
+        this.id =
+            typeof location_data.ID === 'string'
+                ? Base64UUIDToString(location_data.ID)
+                : '';
+        this.name =
+            typeof location_data.Name === 'string' ? location_data.Name : '';
+        this.description =
+            typeof location_data.Description === 'object' &&
+            location_data.Description !== null &&
+            'String' in location_data.Description &&
+            typeof (location_data.Description as Record<string, string>)
+                .String === 'string'
+                ? (location_data.Description as Record<string, string>).String
+                : '';
+        this.parentLocationID =
+            typeof location_data.ParentLocationID === 'string'
+                ? Base64UUIDToString(location_data.ParentLocationID)
+                : '';
         this.app_store = app_store;
     }
 

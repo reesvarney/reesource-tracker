@@ -40,8 +40,13 @@ export async function UpdateLocations() {
     }
     AppStore.update((data) => ({
         ...data,
-        locations: new_locations.map(
-            (location: any) => new SampleLocation(location, AppStore),
+        locations: new_locations.map((location) =>
+            location instanceof SampleLocation
+                ? location
+                : new SampleLocation(
+                      location as Record<string, unknown>,
+                      AppStore,
+                  ),
         ),
     }));
 }
@@ -57,7 +62,14 @@ export async function UpdateProducts() {
     AppStore.update((data) => ({
         ...data,
         products: new_products
-            .map((product: any) => new SampleProduct(product, AppStore))
+            .map((product) =>
+                product instanceof SampleProduct
+                    ? product
+                    : new SampleProduct(
+                          product as Record<string, unknown>,
+                          AppStore,
+                      ),
+            )
             .sort(
                 (a, b) =>
                     a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
@@ -67,7 +79,7 @@ export async function UpdateProducts() {
 
 export async function UpdateUsers() {
     const users_req = await fetch('/api/users');
-    let new_users: any[] = [];
+    let new_users: Record<string, unknown>[] = [];
     if (!users_req.ok) {
         console.error('Failed to fetch users:', await users_req.json());
     } else {
@@ -75,7 +87,11 @@ export async function UpdateUsers() {
     }
     AppStore.update((data) => ({
         ...data,
-        users: new_users.map((user: any) => new User(user, AppStore)),
+        users: new_users.map((user) =>
+            user instanceof User
+                ? user
+                : new User(user as Record<string, unknown>, AppStore),
+        ),
     }));
 }
 
@@ -89,7 +105,11 @@ export async function UpdateSamples() {
     }
     AppStore.update((data) => ({
         ...data,
-        samples: new_samples.map((sample: any) => new Sample(sample, AppStore)),
+        samples: new_samples.map((sample) =>
+            sample instanceof Sample
+                ? sample
+                : new Sample(sample as Record<string, unknown>, AppStore),
+        ),
     }));
 }
 

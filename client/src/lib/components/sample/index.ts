@@ -44,24 +44,43 @@ export class Sample {
     public productIssue: string = '';
     private ownerId: string | null = null;
     constructor(
-        sample_data: { [key: string]: any },
+        sample_data: Record<string, unknown>,
         app_store?: SvelteStore<AppData>,
     ) {
-        this.id = sample_data.ID || '';
-        this.state = Object.values(SampleState).includes(sample_data.State)
-            ? (sample_data.State as SampleState)
-            : SampleState.unknown;
-        this.locationId = Base64UUIDToString(sample_data.LocationID || '');
-        this.productId = Base64UUIDToString(sample_data.ProductID || '');
+        this.id = typeof sample_data.ID === 'string' ? sample_data.ID : '';
+        this.state =
+            typeof sample_data.State === 'string' &&
+            Object.values(SampleState).includes(
+                sample_data.State as SampleState,
+            )
+                ? (sample_data.State as SampleState)
+                : SampleState.unknown;
+        this.locationId =
+            typeof sample_data.LocationID === 'string'
+                ? Base64UUIDToString(sample_data.LocationID)
+                : '';
+        this.productId =
+            typeof sample_data.ProductID === 'string'
+                ? Base64UUIDToString(sample_data.ProductID)
+                : '';
         this.app_store = app_store ?? null;
-        this.ownerId = sample_data.OwnerID
-            ? Base64UUIDToString(sample_data.OwnerID)
-            : null;
-        this.mods =
-            sample_data.mods?.map(
-                (m: { [key: string]: any }) => new SampleMod(m),
-            ) ?? [];
-        this.productIssue = sample_data.ProductIssue?.String || '';
+        this.ownerId =
+            typeof sample_data.OwnerID === 'string'
+                ? Base64UUIDToString(sample_data.OwnerID)
+                : null;
+        this.mods = Array.isArray(sample_data.mods)
+            ? sample_data.mods.map(
+                  (mod) => new SampleMod(mod as Record<string, unknown>),
+              )
+            : [];
+        this.productIssue =
+            typeof sample_data.ProductIssue === 'object' &&
+            sample_data.ProductIssue !== null &&
+            'String' in sample_data.ProductIssue &&
+            typeof (sample_data.ProductIssue as Record<string, string>)
+                .String === 'string'
+                ? (sample_data.ProductIssue as Record<string, string>).String
+                : '';
     }
 
     get DisplayId(): string {

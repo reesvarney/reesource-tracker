@@ -8,9 +8,10 @@ export class User {
     public id: string;
     public name: string;
     private app_store: Writable<AppData>;
-    constructor(data: any, app_store: Writable<AppData>) {
-        this.id = Base64UUIDToString(data.ID);
-        this.name = data.Name;
+    constructor(data: Record<string, unknown>, app_store: Writable<AppData>) {
+        this.id =
+            typeof data.ID === 'string' ? Base64UUIDToString(data.ID) : '';
+        this.name = typeof data.Name === 'string' ? data.Name : '';
         this.app_store = app_store;
     }
 

@@ -10,15 +10,28 @@ export class SampleProduct {
     private app_store: SvelteStore<AppData> | null = null;
     public partNumber: string = '';
     constructor(
-        product_data: { [key: string]: any },
+        product_data: Record<string, unknown>,
         app_store: SvelteStore<AppData> | null = null,
     ) {
-        this.id = Base64UUIDToString(product_data.ID);
-        this.name = product_data.Name || '';
+        this.id =
+            typeof product_data.ID === 'string'
+                ? Base64UUIDToString(product_data.ID)
+                : '';
+        this.name =
+            typeof product_data.Name === 'string' ? product_data.Name : '';
         this.parentProductID =
-            Base64UUIDToString(product_data.ParentProductID) || null;
+            typeof product_data.ParentProductID === 'string'
+                ? Base64UUIDToString(product_data.ParentProductID)
+                : null;
         this.app_store = app_store;
-        this.partNumber = product_data.PartNumber?.String || '';
+        this.partNumber =
+            typeof product_data.PartNumber === 'object' &&
+            product_data.PartNumber !== null &&
+            'String' in product_data.PartNumber &&
+            typeof (product_data.PartNumber as Record<string, string>)
+                .String === 'string'
+                ? (product_data.PartNumber as Record<string, string>).String
+                : '';
     }
 
     get ParentProduct(): SampleProduct | null {
