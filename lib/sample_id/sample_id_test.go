@@ -7,18 +7,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseSampleID(t *testing.T) {
-	// Valid sample ID (should match your format)
+func TestParseSampleID_Valid(t *testing.T) {
 	_, err := sampleid.ParseSampleID("1Z-4I-6T")
 	require.NoError(t, err)
-
-	// Invalid sample ID
-	_, err = sampleid.ParseSampleID("zzzz")
+}
+func TestParseSampleID_Invalid(t *testing.T) {
+	_, err := sampleid.ParseSampleID("zzzz")
 	require.Error(t, err)
 }
 
 func TestFormatSampleID(t *testing.T) {
-	// Valid rawID
 	id := [4]byte{1, 2, 3, 4}
 	s, err := sampleid.FormatSampleID(id[:])
 	require.NoError(t, err)
